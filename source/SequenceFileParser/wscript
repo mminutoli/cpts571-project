@@ -1,0 +1,10 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+def build(bld):
+  bld(features = 'cxx cxxstlib',
+      source = [ 'SequenceFileLexer.l', 'SequenceFileParser.y' ],
+      target = 'lexer',
+      includes = '.',
+      export_includes = '.',
+      use='project-headers')
