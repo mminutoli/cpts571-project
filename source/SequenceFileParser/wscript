@@ -3,8 +3,9 @@
 
 def build(bld):
   bld(features = 'cxx cxxstlib',
-      source = [ 'SequenceFileLexer.l', 'SequenceFileParser.y' ],
-      target = 'lexer',
+      source = [ 'SequenceFileLexer.l', 'SequenceFileParser.yc',
+                 'SequenceFileScanner.cc', 'SequenceFileDriver.cc' ],
+      target = 'sequence_parser',
       includes = '.',
       export_includes = '.',
       use='project-headers')

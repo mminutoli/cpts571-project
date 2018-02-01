@@ -10,15 +10,19 @@
 #undef YY_DECL
 #define YY_DECL int cpts571::SequenceFileScanner::yylex()
 
+#include "SequenceFileParser.tab.hh"
+
 namespace cpts571 {
 
 class SequenceFileScanner : public yyFlexLexer {
 public:
   SequenceFileScanner(std::istream *in);
 
+  int yylex(SequenceFileParser::semantic_type *lval);
   int yylex();
 
  private:
+  SequenceFileParser::semantic_type * yylval;
 };
 
 }

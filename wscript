@@ -14,7 +14,7 @@ def options(opt):
 
 def configure(conf):
   conf.load('compiler_cxx')
-  conf.env.CXXFLAGS += ['-std=c++14']
+  conf.env.CXXFLAGS += ['-std=c++14', '-g']
 
   conf.load('boost')
   # Using boost for command line arguments
@@ -28,6 +28,6 @@ def configure(conf):
   conf.load('bison')
 
 def build(bld):
-  directories = ['include', 'source']
+  directories = ['include', 'source', 'tools' ]
 
   bld.recurse(directories)

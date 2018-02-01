@@ -1,11 +1,12 @@
 %{
-#include <SequenceFileParser/SequenceFileScanner.h>
 
-// using token = cpts571::SequenceFileParser::token;
+#include "SequenceFileParser/SequenceFileScanner.h"
 
-#define TOKEN(x) yylval->sval = new std::string(yytext); return x
+using token = cpts571::SequenceFileParser::token;
 
-// #define yyterminate() return(token::END)
+#define TOKEN(x) std::cout << ""#x << " " << yytext << std::endl; yylval->sval = yytext; return x
+
+#define yyterminate() return(token::END)
 
 %}
 
@@ -17,7 +18,8 @@
 
 %%
 
-[ \r\t\f\v ]+ { /* Ignore these white spaces */ }
-">"           TOKEN(token::START_SEQUENCE);
-[ acgtACGT ]+ TOKEN(token::SEGMENT);
-.             {}
+[ \r\t\f\v\n]+   { /* Ignore these white spaces */ }
+">"              TOKEN(token::START_SEQUENCE);
+[acgtACGT]+      TOKEN(token::SEQUENCE_BIT);
+[a-zA-Z:0-9]+    TOKEN(token::WORD);
+.                { std::cout << "here" << std::endl; }

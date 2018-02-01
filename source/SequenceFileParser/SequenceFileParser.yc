@@ -9,6 +9,7 @@
 
 %code requires {
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -30,23 +31,57 @@ namespace cpts571 {
 
 #include "SequenceFileParser/SequenceFileDriver.h"
 
-/* static int yylex(IA::AlternativesParser::semantic_type * yylval, */
-/*                  IA::AlternativesParser::location_type *, */
-/*                  IA::AlternativesScanner & scanner, */
-/*                  IA::AlternativesDriver & driver); */
+static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
+                 cpts571::SequenceFileParser::location_type *,
+                 cpts571::SequenceFileScanner & scanner,
+                 cpts571::SequenceFileDriver & driver);
 
 }
 
 %start sequences
 
 %union {
-  std::string * sval;
-  unsigned int eval;
+  char * sval;
 }
 
 
-%token  END 0
+%token END 0
+
+%token  <sval> START_SEQUENCE
+%token  <sval> SEQUENCE_BIT
+%token  <sval> WORD
 
 %%
 
-sequences : END
+sequences : sequence sequence END {}
+
+sequence : START_SEQUENCE sequence_name comment sequence_bits {
+         }
+         | START_SEQUENCE sequence_name sequence_bits { }
+
+sequence_name : WORD {}
+
+sequence_bits : SEQUENCE_BIT
+              | sequence_bits SEQUENCE_BIT { }
+
+comment : word_list {}
+
+word_list : WORD | WORD word_list {}
+
+%%
+
+void
+cpts571::SequenceFileParser::error(
+    const cpts571::SequenceFileParser::location_type &l,
+    const std::string &err_message) {
+  std::cerr << "Error at " << l.begin << " : " << err_message << "\n";
+}
+
+#include "SequenceFileParser/SequenceFileScanner.h"
+
+static int yylex(cpts571::SequenceFileParser::semantic_type *lval,
+                 cpts571::SequenceFileParser::location_type *,
+                 cpts571::SequenceFileScanner & scanner,
+                 cpts571::SequenceFileDriver & driver) {
+  return scanner.yylex(lval);
+}
