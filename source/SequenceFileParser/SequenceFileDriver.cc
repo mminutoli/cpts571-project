@@ -16,8 +16,6 @@ SequenceFileDriver::Parse() {
   SequenceFileScanner scanner(&inputFile_);
   SequenceFileParser parser(scanner, *(this));
 
-  std::cout << "Ready to parse" << std::endl;
-
   if (parser.parse() == -1)
     std::cerr << "Parsing failed" << std::endl;
 }

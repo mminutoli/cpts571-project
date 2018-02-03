@@ -12,12 +12,15 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <deque>
 #include <iostream>
 
 namespace cpts571 {
   class SequenceFileScanner;
   class SequenceFileDriver;
 }
+
+static std::deque<std::string> currentSequenceBits;
 
 }
 
@@ -41,9 +44,8 @@ static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
 %start sequences
 
 %union {
-  char * sval;
+  std::string * sval;
 }
-
 
 %token END 0
 
@@ -55,14 +57,31 @@ static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
 
 sequences : sequence sequence END {}
 
-sequence : START_SEQUENCE sequence_name comment sequence_bits {
-         }
-         | START_SEQUENCE sequence_name sequence_bits { }
+sequence : START_SEQUENCE sequence_name comment sequence_bits
+         | START_SEQUENCE sequence_name sequence_bits {
+  for (auto & bit : currentSequenceBits) {
+    driver.AppendChunk(std::begin(bit), std::end(bit));
+  }
+  driver.StartSecondSequence();
+  currentSequenceBits.clear();
+}
 
-sequence_name : WORD {}
+sequence_name : WORD {
+  driver.SequenceName(*$1);
 
-sequence_bits : SEQUENCE_BIT
-              | sequence_bits SEQUENCE_BIT { }
+  delete $1;
+}
+
+sequence_bits : SEQUENCE_BIT sequence_bits {
+  currentSequenceBits.push_front(std::move(*$1));
+
+  delete $1;
+}
+        |       SEQUENCE_BIT {
+  currentSequenceBits.push_front(std::move(*$1));
+
+  delete $1;
+}
 
 comment : word_list {}
 

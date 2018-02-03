@@ -4,7 +4,7 @@
 
 using token = cpts571::SequenceFileParser::token;
 
-#define TOKEN(x) std::cout << ""#x << " " << yytext << std::endl; yylval->sval = yytext; return x
+#define TOKEN(x) do { yylval->sval = new std::string(yytext); return x; } while (0)
 
 #define yyterminate() return(token::END)
 
@@ -22,4 +22,4 @@ using token = cpts571::SequenceFileParser::token;
 ">"              TOKEN(token::START_SEQUENCE);
 [acgtACGT]+      TOKEN(token::SEQUENCE_BIT);
 [a-zA-Z:0-9]+    TOKEN(token::WORD);
-.                { std::cout << "here" << std::endl; }
+.                { }

@@ -7,5 +7,6 @@ int main(int argc, char ** argv) {
 
   std::cout << "File loading : " << argv[1] << std::endl;
   driver.Parse();
+  driver.Print();
   return 0;
 }
