@@ -34,7 +34,7 @@ The previous command should print the help message of the tool.  An example of u
   ```shell
   ./build/tools/alignment_tool -i ./tests/Human-Mouse-BRCA2-cds.fasta -c ./tests/config.json
   ```
-  - Global alignment using default scores ( +1 -1 -1 -5 )
+- Global alignment using default scores ( +1 -1 -1 -5 )
   ```shell
   ./build/tools/alignment_tool -i ./tests/Human-Mouse-BRCA2-cds.fasta
   ```
