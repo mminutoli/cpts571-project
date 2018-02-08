@@ -17,7 +17,7 @@
 
 namespace cpts571 {
   class SequenceFileScanner;
-  class SequenceFileDriver;
+  class SequenceAlignmentDriver;
 }
 
 static std::deque<std::string> currentSequenceBits;
@@ -27,8 +27,8 @@ static std::deque<std::string> currentSequenceBits;
 %lex-param { SequenceFileScanner & scanner }
 %parse-param { SequenceFileScanner & scanner }
 
-%lex-param { SequenceFileDriver & driver }
-%parse-param { SequenceFileDriver & driver }
+%lex-param { SequenceAlignmentDriver & driver }
+%parse-param { SequenceAlignmentDriver & driver }
 
 %code {
 
@@ -37,7 +37,7 @@ static std::deque<std::string> currentSequenceBits;
 static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
                  cpts571::SequenceFileParser::location_type *,
                  cpts571::SequenceFileScanner & scanner,
-                 cpts571::SequenceFileDriver & driver);
+                 cpts571::SequenceAlignmentDriver & driver);
 
 }
 
@@ -57,12 +57,18 @@ static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
 
 sequences : sequence sequence END {}
 
-sequence : START_SEQUENCE sequence_name comment sequence_bits
+sequence : START_SEQUENCE sequence_name comment sequence_bits {
+  for (auto & bit : currentSequenceBits) {
+    driver.AppendChunk(std::begin(bit), std::end(bit));
+  }
+  driver.SwitchToLoadSecondSequence();
+  currentSequenceBits.clear();
+}
          | START_SEQUENCE sequence_name sequence_bits {
   for (auto & bit : currentSequenceBits) {
     driver.AppendChunk(std::begin(bit), std::end(bit));
   }
-  driver.StartSecondSequence();
+  driver.SwitchToLoadSecondSequence();
   currentSequenceBits.clear();
 }
 
@@ -101,6 +107,6 @@ cpts571::SequenceFileParser::error(
 static int yylex(cpts571::SequenceFileParser::semantic_type *lval,
                  cpts571::SequenceFileParser::location_type *,
                  cpts571::SequenceFileScanner & scanner,
-                 cpts571::SequenceFileDriver & driver) {
+                 cpts571::SequenceAlignmentDriver & driver) {
   return scanner.yylex(lval);
 }

@@ -1,12 +1,15 @@
 #include <iostream>
 #include "SequenceFileParser/SequenceFileDriver.h"
 
+#include "Alignment.h"
+
 
 int main(int argc, char ** argv) {
-  cpts571::SequenceFileDriver driver(argv[1]);
+  cpts571::SequenceAlignmentDriver driver(argv[1]);
 
-  std::cout << "File loading : " << argv[1] << std::endl;
   driver.Parse();
+  driver.AlignSequences();
   driver.Print();
+
   return 0;
 }

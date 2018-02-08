@@ -19,6 +19,14 @@ class Sequence {
     sequence_.insert(std::end(sequence_), B, E);
   }
 
+  char operator[](size_t pos) const {
+    return sequence_[pos];
+  }
+
+  size_t length() const {
+    return sequence_.length();
+  }
+
   iterator begin() { return sequence_.begin(); }
   const_iterator begin() const { return sequence_.begin(); }
 
