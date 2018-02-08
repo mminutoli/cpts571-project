@@ -4,6 +4,9 @@
 #include "cpts571/Alignment.h"
 #include "cpts571/Sequence.h"
 
+#include "rapidjson/document.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/istreamwrapper.h"
 
 namespace cpts571 {
 
@@ -20,6 +23,19 @@ SequenceAlignmentDriver::Parse() {
 
   if (parser.parse() == -1)
     std::cerr << "Parsing failed" << std::endl;
+
+  std::ifstream configFile(configFileName_.c_str());
+
+  if (!configFile.good()) return;
+
+  rapidjson::IStreamWrapper ISW(configFile);
+  rapidjson::Document document;
+  document.ParseStream(ISW);
+
+  S_.Match = document["match"].GetInt64();
+  S_.Mismatch = document["mismatch"].GetInt64();
+  S_.H = document["h"].GetInt64();
+  S_.G = document["g"].GetInt64();
 }
 
 void
