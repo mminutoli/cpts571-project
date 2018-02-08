@@ -9,12 +9,13 @@ namespace cpts571 {
 
 void
 SequenceAlignmentDriver::Parse() {
-  if (!inputFile_.good()) {
+  std::ifstream inputFile(inputFileName_.c_str());
+  if (!inputFile.good()) {
     std::cerr << "Error opening the file" << std::endl;
     exit(-1);
   }
 
-  SequenceFileScanner scanner(&inputFile_);
+  SequenceFileScanner scanner(&inputFile);
   SequenceFileParser parser(scanner, *(this));
 
   if (parser.parse() == -1)
@@ -23,10 +24,11 @@ SequenceAlignmentDriver::Parse() {
 
 void
 SequenceAlignmentDriver::AlignSequences() {
-  S_ = { 1, -2, -5, -2 };
-
-  actions_ = Alignment(sequence1_, sequence2_, S_, global_alignment_tag());
-
+  if (isGlobal_) {
+    actions_ = Alignment(sequence1_, sequence2_, S_, global_alignment_tag());
+  } else {
+    actions_ = Alignment(sequence1_, sequence2_, S_, local_alignment_tag());
+  }
 }
 
 static void
@@ -49,11 +51,14 @@ PrintAlignment(const Sequence & s1, const Sequence & s2,
     for (auto itr = actions.rbegin() + printed, end = actions.rend();
          itr != end && currentLine < 60; ++itr , ++currentLine) {
       switch(*itr) {
+        case Action::DC_MatchMismatch:
         case Action::Match:
         case Action::Mismatch:
+        case Action::DC_Deletion:
         case Action::Deletion:
           std::cout << s1[i++];
           break;
+        case Action::DC_Insertion:
         case Action::Insertion:
           std::cout << '-';
       }
@@ -67,6 +72,9 @@ PrintAlignment(const Sequence & s1, const Sequence & s2,
         case Action::Match:
           std::cout << '|';
           break;
+        case Action::DC_MatchMismatch:
+        case Action::DC_Insertion:
+        case Action::DC_Deletion:
         case Action::Mismatch:
         case Action::Insertion:
         case Action::Deletion:
@@ -81,10 +89,13 @@ PrintAlignment(const Sequence & s1, const Sequence & s2,
       switch(*itr) {
         case Action::Match:
         case Action::Mismatch:
+        case Action::DC_MatchMismatch:
         case Action::Insertion:
+        case Action::DC_Insertion:
           std::cout << s2[j++];
           break;
         case Action::Deletion:
+        case Action::DC_Deletion:
           std::cout << '-';
       }
     }
@@ -142,6 +153,8 @@ PrintReport(std::deque<Action> & actions, ScoreTable & S) {
         ++gaps;
         if (inInsertionGap) inInsertionGap = false;
         break;
+      default:
+        break;
     }
   }
 
@@ -150,6 +163,7 @@ PrintReport(std::deque<Action> & actions, ScoreTable & S) {
                         S.H * openingGaps +
                         S.G * gaps;
 
+  size_t lengthOfAlignment = matches + mismatches + gaps;
   std::cout
       << "\nReport:\n"
          "\nGlobal optimal score = " << globalScore
@@ -157,10 +171,10 @@ PrintReport(std::deque<Action> & actions, ScoreTable & S) {
       << ", mismatches = " << mismatches
       << ", gaps = " << gaps
       << ", opening gaps = " << openingGaps
-      << "\n\nIdentities = " << matches << "/" << actions.size()
-      << " (" << 100 * matches / actions.size() << "%)"
-      << ", Gaps = " << gaps << "/" << actions.size()
-      << " (" << 100 * gaps / actions.size() << "%)"
+      << "\n\nIdentities = " << matches << "/" << lengthOfAlignment
+      << " (" << 100 * matches / lengthOfAlignment << "%)"
+      << ", Gaps = " << gaps << "/" << lengthOfAlignment
+      << " (" << 100 * gaps / lengthOfAlignment << "%)"
       << std::endl;
 }
 

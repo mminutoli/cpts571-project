@@ -1,6 +1,7 @@
 #ifndef SEQUENCE_ALIGNMENT_DRIVER_H
 #define SEQUENCE_ALIGNMENT_DRIVER_H
 
+#include <string>
 #include <fstream>
 #include <iostream>
 
@@ -12,13 +13,23 @@
 
 namespace cpts571 {
 
+struct SequenceAlignmentDriverConfiguration {
+  std::string IFileName;
+  bool Global;
+  std::string CFileName;
+};
+
 class SequenceAlignmentDriver {
  public:
-  SequenceAlignmentDriver(const std::string & iFileName)
-      : inputFile_(iFileName.c_str())
+  SequenceAlignmentDriver(const SequenceAlignmentDriverConfiguration & C)
+      : inputFileName_(C.IFileName)
+      , configFileName_(C.CFileName)
       , currentSequence_(&sequence1_)
       , sequence1_()
       , sequence2_()
+      , S_{ 1, -2, -5, -2 }
+      , isGlobal_(C.Global)
+      , actions_()
   {}
 
   void SequenceName(const std::string & n) {
@@ -39,14 +50,15 @@ class SequenceAlignmentDriver {
   void Print();
 
 private:
-  std::ifstream inputFile_;
+  std::string inputFileName_;
+  std::string configFileName_;
 
   Sequence * currentSequence_;
   Sequence sequence1_;
   Sequence sequence2_;
 
   ScoreTable S_;
-
+  bool isGlobal_;
   std::deque<Action> actions_;
 };
 

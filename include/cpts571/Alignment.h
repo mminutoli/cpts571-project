@@ -16,7 +16,10 @@ enum class Action {
   Match,
   Mismatch,
   Insertion,
-  Deletion
+  Deletion,
+  DC_MatchMismatch,
+  DC_Insertion,
+  DC_Deletion
 };
 
 struct AffineCell {
@@ -91,6 +94,85 @@ class AlignmentAlgorithmTrait {
 
   static bool
   TraceBackStopCondition(const MatrixTy & M, const size_t i, const size_t j);
+};
+
+
+template <>
+class AlignmentAlgorithmTrait<local_alignment_tag> {
+ public:
+  using CellTy   = AffineCell;
+  using MatrixTy = Matrix<CellTy>;
+
+  static void InitializeMatrix(const ScoreTable & S, const MatrixTy & M) {
+    M(0,0).Match     = 0;
+    M(0,0).Insertion = std::numeric_limits<ssize_t>::min();
+    M(0,0).Deletion  = std::numeric_limits<ssize_t>::min();
+
+    for (size_t i = 1; i < M.rows(); ++i) {
+      M(i, 0).Match     = std::numeric_limits<ssize_t>::min();
+      M(i, 0).Deletion  = 0;
+      M(i, 0).Insertion = std::numeric_limits<ssize_t>::min();
+    }
+    for (size_t j = 1; j < M.columns(); ++j) {
+      M(0, j).Match     = std::numeric_limits<ssize_t>::min();
+      M(0, j).Deletion  = std::numeric_limits<ssize_t>::min();
+      M(0, j).Insertion = 0;
+    }
+  }
+
+  static void ComputeScore(
+      const ScoreTable & S,
+      const MatrixTy & M, const size_t i, const size_t j,
+      const char s1, const char s2) {
+    ssize_t matchOrMismatch = s1 == s2 ? S.Match : S.Mismatch;
+    M(i,j).Match =
+        std::max(ssize_t(0),
+                 std::max(M(i - 1, j - 1).Match,
+                          std::max(M(i - 1, j - 1).Deletion,
+                                   M(i - 1, j - 1).Insertion))
+                 + matchOrMismatch);
+
+    auto getNewScore = [](ssize_t current, ssize_t delta) -> ssize_t {
+      if (current == std::numeric_limits<ssize_t>::min())
+        return current;
+
+      return current + delta;
+    };
+
+    M(i,j).Deletion =
+        std::max(getNewScore(M(i - 1, j).Match, S.G + S.H),
+                 std::max(
+                     getNewScore(M(i - 1, j).Deletion, S.G),
+                     getNewScore(M(i - 1, j).Insertion, S.G + S.H)));
+
+    M(i,j).Insertion =
+        std::max(getNewScore(M(i, j - 1).Match, S.G + S.H),
+                 std::max(
+                     getNewScore(M(i, j - 1).Deletion, S.G + S.H),
+                     getNewScore(M(i, j - 1).Insertion, S.G)));
+  }
+
+  static std::tuple<size_t, size_t, ssize_t, Action>
+  GetFinalScoreAndAction(
+      const MatrixTy & M, const Sequence & s1, const Sequence& s2) {
+    ssize_t maxScore = 0;
+    size_t maxI, maxJ;
+    for (size_t i = 0; i < M.rows(); ++i) {
+      for (size_t j = 0; j < M.columns(); ++j) {
+        if (M(i,j).Match > maxScore) {
+          maxI = i;
+          maxJ = j;
+          maxScore = M(i,j).Match;
+        }
+      }
+    }
+    return std::make_tuple(maxI, maxJ, maxScore, Action::Match);
+  }  
+
+  static bool
+  TraceBackStopCondition(const MatrixTy & M, const size_t i, const size_t j) {
+    return i == 0 || j == 0 || M(i,j).Match == 0;
+  }
 };
 
 
@@ -176,7 +258,7 @@ class AlignmentAlgorithmTrait<global_alignment_tag> {
 };
 
 template <typename algorithm_tag>
-std::deque<Action>
+std::tuple<std::deque<Action>, size_t, size_t>
 TraceBackActions(
     const typename AlignmentAlgorithmTrait<algorithm_tag>::MatrixTy & M,
     size_t i, size_t j, Action action, ssize_t score,
@@ -196,6 +278,8 @@ TraceBackActions(
       break;
     case Action::Deletion:
       --i;
+      break;
+    default:
       break;
   }
 
@@ -269,12 +353,14 @@ TraceBackActions(
           exit(-4);
         }
         break;
+      default:
+        break;
     }
 
     actionStack.push_back(action);
   }
 
-  return actionStack;
+  return std::make_tuple(actionStack, i, j);
 }
 
 template <typename algorithm_tag>
@@ -287,7 +373,6 @@ Alignment(const Sequence &s1, const Sequence &s2,
 
   Matrix M(s1.length() + 1, s2.length() + 1);
   AlgorithmTrait::InitializeMatrix(S, M);
-  
 
   // Fill in the matrix top to bottom, left to right
   for (size_t i = 1; i < M.rows(); ++i) {
@@ -296,14 +381,49 @@ Alignment(const Sequence &s1, const Sequence &s2,
     }
   }
 
-  size_t i, j;
+  size_t startI, startJ, endI, endJ;
   ssize_t score;
   Action action;
-  std::tie(i, j, score, action) =
+  std::tie(startI, startJ, score, action) =
       AlgorithmTrait::GetFinalScoreAndAction(M, s1, s2);
 
-  std::deque<Action> actionStack =
-      TraceBackActions<algorithm_tag>(M, i, j, action, score, S, s1, s2);
+  std::deque<Action> actionStack;
+
+  std::tie(actionStack, endI, endJ) =
+      TraceBackActions<algorithm_tag>(
+          M, startI, startJ, action, score, S, s1, s2);
+
+  if (startI != M.rows() - 1 || startJ != M.columns() - 1) {
+    size_t diagonal = std::min(s1.length() - startI, s2.length() - startJ);
+    actionStack.insert(
+        std::begin(actionStack),
+        diagonal,
+        Action::DC_MatchMismatch);
+    if (s1.length() - startI > s2.length() - startJ) {
+      actionStack.insert(
+          std::begin(actionStack),
+          (s1.length() - startI) - (s2.length() - startJ), Action::DC_Deletion);
+    } else if (s1.length() < s2.length()) {
+      actionStack.insert(
+          std::begin(actionStack),
+          (s2.length() - startJ) - (s1.length() - startI), Action::DC_Insertion);
+    }
+  }
+
+  if (endI != 0 || endJ != 0) {
+    actionStack.insert(
+        std::end(actionStack),
+        std::min(endI, endJ), Action::DC_MatchMismatch);
+    if (endI > endJ) {
+      actionStack.insert(
+          std::end(actionStack),
+          endI - endJ, Action::DC_Deletion);
+    } else if (endJ > endI) {
+      actionStack.insert(
+          std::end(actionStack),
+          endJ - endI, Action::DC_Insertion);
+    }
+  }
 
   return actionStack;
 }
