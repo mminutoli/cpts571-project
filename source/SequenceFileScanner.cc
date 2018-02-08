@@ -1,4 +1,4 @@
-#include "SequenceFileParser/SequenceFileScanner.h"
+#include "cpts571/SequenceFileScanner.h"
 
 namespace cpts571 {
 

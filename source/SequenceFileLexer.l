@@ -1,6 +1,6 @@
 %{
 
-#include "SequenceFileParser/SequenceFileScanner.h"
+#include "cpts571/SequenceFileScanner.h"
 
 using token = cpts571::SequenceFileParser::token;
 

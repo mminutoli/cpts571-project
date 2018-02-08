@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "SequenceFileParser/SequenceFileDriver.h"
-#include "Alignment.h"
-#include "Sequence.h"
+#include "cpts571/SequenceAlignmentDriver.h"
+#include "cpts571/Alignment.h"
+#include "cpts571/Sequence.h"
 
 
 namespace cpts571 {

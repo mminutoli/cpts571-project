@@ -5,7 +5,7 @@
 #include <deque>
 #include <tuple>
 
-#include "Sequence.h"
+#include "cpts571/Sequence.h"
 
 #ifndef _ALIGNMENT_H_
 #define _ALIGNMENT_H_

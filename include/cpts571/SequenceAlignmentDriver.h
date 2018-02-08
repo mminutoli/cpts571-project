@@ -1,13 +1,14 @@
-#ifndef SEQUENCEFILEDRIVER_H
-#define SEQUENCEFILEDRIVER_H
+#ifndef SEQUENCE_ALIGNMENT_DRIVER_H
+#define SEQUENCE_ALIGNMENT_DRIVER_H
 
 #include <fstream>
 #include <iostream>
 
-#include "Alignment.h"
-#include "SequenceFileParser/SequenceFileScanner.h"
+#include "cpts571/Alignment.h"
+#include "cpts571/SequenceFileScanner.h"
+#include "cpts571/Sequence.h"
+
 #include "SequenceFileParser.tab.hh"
-#include "Sequence.h"
 
 namespace cpts571 {
 
@@ -51,4 +52,4 @@ private:
 
 }
 
-#endif /* SEQUENCEFILEDRIVER_H */
+#endif  // SEQUENCE_ALIGNMENT_DRIVER_H

@@ -32,7 +32,7 @@ static std::deque<std::string> currentSequenceBits;
 
 %code {
 
-#include "SequenceFileParser/SequenceFileDriver.h"
+#include "cpts571/SequenceAlignmentDriver.h"
 
 static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
                  cpts571::SequenceFileParser::location_type *,
@@ -102,7 +102,7 @@ cpts571::SequenceFileParser::error(
   std::cerr << "Error at " << l.begin << " : " << err_message << "\n";
 }
 
-#include "SequenceFileParser/SequenceFileScanner.h"
+#include "cpts571/SequenceFileScanner.h"
 
 static int yylex(cpts571::SequenceFileParser::semantic_type *lval,
                  cpts571::SequenceFileParser::location_type *,

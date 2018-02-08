@@ -2,5 +2,10 @@
 # encoding: utf-8
 
 def build(bld):
-  directories = ['SequenceFileParser']
-  bld.recurse(directories)
+  bld(features = 'cxx cxxstlib',
+      source = [ 'SequenceFileLexer.l', 'SequenceFileParser.yc',
+                 'SequenceFileScanner.cc', 'SequenceAlignmentDriver.cc' ],
+      target = 'sequence_alignment',
+      includes = '.',
+      export_includes = '.',
+      use='project-headers')

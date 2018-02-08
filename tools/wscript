@@ -5,4 +5,4 @@ def build(bld):
   bld(features = 'cxx cxxprogram',
       source   = 'LocalGlobalAlignmentTool.cc',
       target   = 'alignment_tool',
-      use = [ 'project-headers', 'sequence_parser' ])
+      use = [ 'project-headers', 'sequence_alignment' ])

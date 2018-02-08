@@ -1,7 +1,6 @@
 #include <iostream>
-#include "SequenceFileParser/SequenceFileDriver.h"
 
-#include "Alignment.h"
+#include "cpts571/SequenceAlignmentDriver.h"
 
 
 int main(int argc, char ** argv) {
