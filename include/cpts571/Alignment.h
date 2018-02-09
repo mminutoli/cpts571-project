@@ -31,27 +31,35 @@
 
 namespace cpts571 {
 
+//! \brief Possible actions during alignment
 enum class Action {
   Match,
   Mismatch,
   Insertion,
   Deletion,
-  DC_MatchMismatch,
-  DC_Insertion,
-  DC_Deletion
+  DC_MatchMismatch, //< This is a don't care action needed for the print routine
+  DC_Insertion,     //< This is a don't care action needed for the print routine
+  DC_Deletion       //< This is a don't care action needed for the print routine
 };
 
+
+//! \brief The cell of the matrix used for the alignment procedure
 struct AffineCell {
   ssize_t Match;
   ssize_t Insertion;
   ssize_t Deletion;
 };
 
+//! \brief The Matrix used for the dynamic programming table
+//! \tparam Cell The type of the cell in the table.
 template <typename Cell>
 class Matrix {
  public:
   using CellTy = Cell;
 
+  //! \brief Constructor
+  //! \param rows Number of rows
+  //! \param columns Number of columns
   Matrix(size_t rows, size_t columns)
       : rows_(rows), columns_(columns) {
     matrix_ = new CellTy *[rows_];
@@ -62,18 +70,26 @@ class Matrix {
     }
   }
 
+  //! \brief Destructor
   ~Matrix() {
     if (rows_) delete[] matrix_[0];
     delete [] matrix_;
   }
 
+  //! \brief Return the number of rows of the matrix
+  //! \return the number of rows of the matrix
   size_t rows() const { return rows_; }
+
+  //! \brief Return the number of columns of the matrix
+  //! \return the number of columns of the matrix
   size_t columns() const { return columns_; }
 
+  //! \brief Get the cell (i,j) of the matrix
   CellTy & operator()(size_t row, size_t column) {
     return matrix_[row][column];
   }
 
+  //! \brief Get the cell (i,j) of the matrix
   CellTy & operator()(size_t row, size_t column) const {
     return matrix_[row][column];
   }
@@ -87,6 +103,7 @@ class Matrix {
 struct global_alignment_tag {};
 struct local_alignment_tag {};
 
+//! \brief The score table used by the affine score function
 struct ScoreTable {
   ssize_t Match;
   ssize_t Mismatch;
@@ -94,28 +111,34 @@ struct ScoreTable {
   ssize_t G;
 };
 
+//! \brief The Algorithm Trait of the Sequence alignment
 template <typename T>
 class AlignmentAlgorithmTrait {
  public:
   using CellTy   = ssize_t;
   using MatrixTy = Matrix<CellTy>;
 
+  //! \brief Inizialization step
   static void InitializeMatrix(const ScoreTable & S, const MatrixTy & M);
 
+  //! \brief The function computing the score
   static void ComputeScore(
       const ScoreTable & S,
       const MatrixTy & M, const size_t i, const size_t j,
       const char s1, const char s2);
 
+  //! \brief retrieve the content of the final cell.
   static std::tuple<size_t, size_t, ssize_t, Action>
   GetFinalScoreAndAction(
       const MatrixTy & M, const Sequence & s1, const Sequence& s2);
 
+  //! \brief condition to stop the traceback rutine
   static bool
   TraceBackStopCondition(const MatrixTy & M, const size_t i, const size_t j);
 };
 
 
+//! \brief Specialization of the trait for the local alignment
 template <>
 class AlignmentAlgorithmTrait<local_alignment_tag> {
  public:
@@ -195,6 +218,7 @@ class AlignmentAlgorithmTrait<local_alignment_tag> {
 };
 
 
+//! \brief Specialization of the trait for the global alignment
 template <>
 class AlignmentAlgorithmTrait<global_alignment_tag> {
  public:
@@ -382,6 +406,12 @@ TraceBackActions(
   return std::make_tuple(actionStack, i, j);
 }
 
+//! \brief The alignment procedure.
+//!
+//! \param s1 The first sequence
+//! \param s2 The second sequence
+//! \param S  The score table
+//! \returns The list of action needed to alingn s1 to s2
 template <typename algorithm_tag>
 std::deque<Action>
 Alignment(const Sequence &s1, const Sequence &s2,
