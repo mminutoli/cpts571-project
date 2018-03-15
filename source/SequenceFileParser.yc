@@ -68,17 +68,19 @@ static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
 }
 
 %token END 0
+%token NL  1
 
 %token  <sval> START_SEQUENCE
-%token  <sval> SEQUENCE_BIT
 %token  <sval> WORD
 
 %%
 
-sequences : sequence END
-          | sequence sequences END {}
+sequences : sequence_list END {}
 
-sequence : START_SEQUENCE sequence_name comment sequence_bits {
+sequence_list : sequence
+              | sequence sequence_list {}
+
+sequence : START_SEQUENCE sequence_name comment NL sequence_bits {
   Sequence sequence;
   sequence.Name(currentSequenceName);
   for (auto & bit : currentSequenceBits) {
@@ -88,7 +90,7 @@ sequence : START_SEQUENCE sequence_name comment sequence_bits {
   driver.AddSequence(sequence);
   currentSequenceBits.clear();
 }
-         | START_SEQUENCE sequence_name sequence_bits {
+         | START_SEQUENCE sequence_name NL sequence_bits {
   Sequence sequence;
   sequence.Name(currentSequenceName);
   for (auto & bit : currentSequenceBits) {
@@ -103,12 +105,13 @@ sequence_name : WORD {
   currentSequenceName = std::move(*$1);
 }
 
-sequence_bits : SEQUENCE_BIT sequence_bits {
+sequence_bits : WORD sequence_bits {
   currentSequenceBits.push_front(std::move(*$1));
 }
-        |       SEQUENCE_BIT {
+        | WORD NL sequence_bits {
   currentSequenceBits.push_front(std::move(*$1));
 }
+        | { }
 
 comment : word_list {}
 

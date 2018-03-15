@@ -36,8 +36,8 @@ using token = cpts571::SequenceFileParser::token;
 
 %%
 
-[ \r\t\f\v\n]+   { /* Ignore these white spaces */ }
+[ \r\t\f\v]+   { /* Ignore these white spaces */ }
 ">"              TOKEN(token::START_SEQUENCE);
-[acgtACGT]+      TOKEN(token::SEQUENCE_BIT);
 [a-zA-Z0-9:_.-]+ TOKEN(token::WORD);
+[\n]+            TOKEN(token::NL);
 .                { }
