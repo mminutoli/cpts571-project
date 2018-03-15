@@ -16,9 +16,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <cassert>
 #include <iostream>
+#include <fstream>
 
 #include "cpts571/SequenceAlignmentDriver.h"
+#include "cpts571/SequenceParserDriver.h"
 #include "cpts571/Alignment.h"
 #include "cpts571/Sequence.h"
 
@@ -29,20 +32,12 @@
 namespace cpts571 {
 
 void
-SequenceAlignmentDriver::Parse() {
-  std::ifstream inputFile(inputFileName_.c_str());
-  if (!inputFile.good()) {
-    std::cerr << "Error opening the file" << std::endl;
-    exit(-1);
-  }
+SequenceAlignmentDriver::Parse(const std::string &IF, const std::string &CF) {
+  SequenceParserDriver SPD(IF);
 
-  SequenceFileScanner scanner(&inputFile);
-  SequenceFileParser parser(scanner, *(this));
+  sequences_ = std::move(SPD.Parse());
 
-  if (parser.parse() == -1)
-    std::cerr << "Parsing failed" << std::endl;
-
-  std::ifstream configFile(configFileName_.c_str());
+  std::ifstream configFile(CF.c_str());
 
   if (!configFile.good()) return;
 
@@ -58,10 +53,12 @@ SequenceAlignmentDriver::Parse() {
 
 void
 SequenceAlignmentDriver::AlignSequences() {
+  assert(sequences_.size() == 2);
+
   if (isGlobal_) {
-    actions_ = Alignment(sequence1_, sequence2_, S_, global_alignment_tag());
+    actions_ = Alignment(sequences_[0], sequences_[1], S_, global_alignment_tag());
   } else {
-    actions_ = Alignment(sequence1_, sequence2_, S_, local_alignment_tag());
+    actions_ = Alignment(sequences_[0], sequences_[1], S_, local_alignment_tag());
   }
 }
 
@@ -215,8 +212,10 @@ PrintReport(std::deque<Action> & actions, ScoreTable & S) {
 
 void
 SequenceAlignmentDriver::Print() {
+  assert(sequences_.size() == 2);
+
   PrintScoreTable(S_);
-  PrintAlignment(sequence1_, sequence2_, actions_);
+  PrintAlignment(sequences_[0], sequences_[1], actions_);
   PrintReport(actions_, S_);
 }
 

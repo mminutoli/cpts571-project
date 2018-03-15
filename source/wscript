@@ -4,8 +4,15 @@
 def build(bld):
   bld(features = 'cxx cxxstlib',
       source = [ 'SequenceFileLexer.l', 'SequenceFileParser.yc',
-                 'SequenceFileScanner.cc', 'SequenceAlignmentDriver.cc' ],
-      target = 'sequence_alignment',
+                 'SequenceFileScanner.cc', 'SequenceParserDriver.cc'],
+      target = 'sequence_parser',
       includes = '.',
       export_includes = '.',
       use='project-headers')
+
+  bld(features = 'cxx cxxstlib',
+      source = [ 'SequenceAlignmentDriver.cc' ],
+      target = 'sequence_alignment',
+      includes = '.',
+      export_includes = '.',
+      use=[ 'project-headers', 'sequence_parser'])

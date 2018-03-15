@@ -17,13 +17,12 @@
 //===----------------------------------------------------------------------===//
 
 
-#ifndef SEQUENCE_ALIGNMENT_DRIVER_H
-#define SEQUENCE_ALIGNMENT_DRIVER_H
+#ifndef SEQUENCE_PARSER_DRIVER_H
+#define SEQUENCE_PARSER_DRIVER_H
 
 #include <string>
 #include <vector>
 
-#include "cpts571/Alignment.h"
 #include "cpts571/SequenceFileScanner.h"
 #include "cpts571/Sequence.h"
 
@@ -31,36 +30,21 @@
 
 namespace cpts571 {
 
-struct SequenceAlignmentDriverConfiguration {
-  std::string IFileName;
-  bool Global;
-  std::string CFileName;
-};
-
-class SequenceAlignmentDriver {
+class SequenceParserDriver {
  public:
-  SequenceAlignmentDriver(const SequenceAlignmentDriverConfiguration & C)
-      : sequences_()
-      , S_{ 1, -2, -5, -2 }
-      , isGlobal_(C.Global)
-      , actions_()
-  {
-    Parse(C.IFileName, C.CFileName);
-  }
+  SequenceParserDriver(const std::string & inputFileName)
+      : inputFileName_(inputFileName)
+  {}
 
-  void AlignSequences();
+  std::vector<Sequence> Parse();
 
-  void Print();
+  void AddSequence(Sequence & s) { sequences_.emplace_back(std::move(s)); }
 
-private:
-  void Parse(const std::string &IF, const std::string &CF);
-
+ private:
+  std::string inputFileName_;
   std::vector<Sequence> sequences_;
-  ScoreTable S_;
-  bool isGlobal_;
-  std::deque<Action> actions_;
 };
 
 }
 
-#endif  // SEQUENCE_ALIGNMENT_DRIVER_H
+#endif  // SEQUENCE_PARSER_DRIVER_H

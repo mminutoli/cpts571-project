@@ -36,27 +36,28 @@
 
 namespace cpts571 {
   class SequenceFileScanner;
-  class SequenceAlignmentDriver;
+  class SequenceParserDriver;
 }
 
 static std::deque<std::string> currentSequenceBits;
+static std::string currentSequenceName;
 
 }
 
 %lex-param { SequenceFileScanner & scanner }
 %parse-param { SequenceFileScanner & scanner }
 
-%lex-param { SequenceAlignmentDriver & driver }
-%parse-param { SequenceAlignmentDriver & driver }
+%lex-param { SequenceParserDriver & driver }
+%parse-param { SequenceParserDriver & driver }
 
 %code {
 
-#include "cpts571/SequenceAlignmentDriver.h"
+#include "cpts571/SequenceParserDriver.h"
 
 static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
                  cpts571::SequenceFileParser::location_type *,
                  cpts571::SequenceFileScanner & scanner,
-                 cpts571::SequenceAlignmentDriver & driver);
+                 cpts571::SequenceParserDriver & driver);
 
 }
 
@@ -74,40 +75,39 @@ static int yylex(cpts571::SequenceFileParser::semantic_type * yylval,
 
 %%
 
-sequences : sequence sequence END {}
+sequences : sequence END
+          | sequence sequences END {}
 
 sequence : START_SEQUENCE sequence_name comment sequence_bits {
+  Sequence sequence;
+  sequence.Name(currentSequenceName);
   for (auto & bit : currentSequenceBits) {
     std::transform(std::begin(bit), std::end(bit), std::begin(bit), ::toupper);
-    driver.AppendChunk(std::begin(bit), std::end(bit));
+    sequence.AppendChunk(std::begin(bit), std::end(bit));
   }
-  driver.SwitchToLoadSecondSequence();
+  driver.AddSequence(sequence);
   currentSequenceBits.clear();
 }
          | START_SEQUENCE sequence_name sequence_bits {
+  Sequence sequence;
+  sequence.Name(currentSequenceName);
   for (auto & bit : currentSequenceBits) {
     std::transform(std::begin(bit), std::end(bit), std::begin(bit), ::toupper);
-    driver.AppendChunk(std::begin(bit), std::end(bit));
+    sequence.AppendChunk(std::begin(bit), std::end(bit));
   }
-  driver.SwitchToLoadSecondSequence();
+  driver.AddSequence(sequence);
   currentSequenceBits.clear();
 }
 
 sequence_name : WORD {
-  driver.SequenceName(*$1);
-
-  delete $1;
+  currentSequenceName = std::move(*$1);
 }
 
 sequence_bits : SEQUENCE_BIT sequence_bits {
   currentSequenceBits.push_front(std::move(*$1));
-
-  delete $1;
 }
         |       SEQUENCE_BIT {
   currentSequenceBits.push_front(std::move(*$1));
-
-  delete $1;
 }
 
 comment : word_list {}
@@ -128,6 +128,6 @@ cpts571::SequenceFileParser::error(
 static int yylex(cpts571::SequenceFileParser::semantic_type *lval,
                  cpts571::SequenceFileParser::location_type *,
                  cpts571::SequenceFileScanner & scanner,
-                 cpts571::SequenceAlignmentDriver & driver) {
+                 cpts571::SequenceParserDriver & driver) {
   return scanner.yylex(lval);
 }

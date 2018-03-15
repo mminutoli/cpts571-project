@@ -54,7 +54,6 @@ int main(int argc, char ** argv) {
 
   cpts571::SequenceAlignmentDriver driver(CFG);
 
-  driver.Parse();
   driver.AlignSequences();
   driver.Print();
 
