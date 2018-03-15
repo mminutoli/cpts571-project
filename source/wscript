@@ -16,3 +16,10 @@ def build(bld):
       includes = '.',
       export_includes = '.',
       use=[ 'project-headers', 'sequence_parser'])
+
+  bld(features = 'cxx cxxstlib',
+      source = [ 'SuffixTreeDriver.cc' ],
+      target = 'suffixtree',
+      includes = '.',
+      export_includes = '.',
+      use=[ 'project-headers', 'sequence_parser'])

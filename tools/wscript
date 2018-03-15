@@ -3,6 +3,11 @@
 
 def build(bld):
   bld(features = 'cxx cxxprogram',
+      source   = 'SuffixTreeTool.cc',
+      target   = 'suffixtree_tool',
+      use = [ 'project-headers', 'suffixtree', 'BOOST' ])
+
+  bld(features = 'cxx cxxprogram',
       source   = 'LocalGlobalAlignmentTool.cc',
       target   = 'alignment_tool',
       use = [ 'project-headers', 'sequence_alignment', 'BOOST' ])
