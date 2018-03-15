@@ -14,7 +14,7 @@ def options(opt):
 
 def configure(conf):
   conf.load('compiler_cxx')
-  conf.env.CXXFLAGS += ['-std=c++14', '-g']
+  conf.env.CXXFLAGS += ['-std=c++14', '-Ofast', '-march=native']
 
   conf.load('boost')
   # Using boost for command line arguments
