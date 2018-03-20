@@ -27,6 +27,7 @@
 #include "cpts571/Alignment.h"
 #include "cpts571/SequenceFileScanner.h"
 #include "cpts571/Sequence.h"
+#include "cpts571/SuffixTree.h"
 
 #include "SequenceFileParser.tab.hh"
 
@@ -35,21 +36,33 @@ namespace cpts571 {
 struct SuffixTreeDriverConfiguration {
   std::string IFileName;
   std::string AlphabetFileName;
+  std::string DotOutput;
 };
 
 class SuffixTreeDriver {
  public:
   SuffixTreeDriver(const SuffixTreeDriverConfiguration & C)
       : sequence_()
+      , dotFileName_(C.DotOutput)
   {
     Parse(C.IFileName, C.AlphabetFileName);
-    std::cout << sequence_ << std::endl;
+    std::cout << "# " << sequence_ << std::endl;
+  }
+
+  void Exec() {
+    SuffixTree ST(sequence_);
+
+    if (!dotFileName_.empty()) {
+      std::ofstream DotS(dotFileName_);
+      ST.PrintDot(DotS);
+    }
   }
 
 private:
   void Parse(const std::string &IF, const std::string &AF);
 
   Sequence sequence_;
+  std::string dotFileName_;
 };
 
 }

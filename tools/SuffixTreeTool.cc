@@ -12,7 +12,10 @@ void ParseCmdOptions(int argc, char **argv,
       ("input-file,i", po::value<std::string>(&CFG.IFileName)->required(),
        "The input file with the edge-list.")
       ("alphabet-file,a", po::value<std::string>(&CFG.AlphabetFileName),
-       "The file containing the alphabet");
+       "The file containing the alphabet")
+      ("dot", po::value<std::string>(&CFG.DotOutput),
+       "The file name of the Dot output file");
+;
 
   po::variables_map VM;
   try {
@@ -38,5 +41,6 @@ int main(int argc, char **argv) {
   ParseCmdOptions(argc, argv, CFG);
 
   cpts571::SuffixTreeDriver driver(CFG);
+  driver.Exec();
   return 0;
 }
