@@ -20,6 +20,7 @@
 #ifndef SUFFIX_TREE_H
 #define SUFFIX_TREE_H
 
+#include <cassert>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -29,27 +30,71 @@
 
 namespace cpts571 {
 
-struct SuffixTreeNode {
+class SuffixTreeNode {
+ public:
   using node_ptr  = std::shared_ptr<SuffixTreeNode>;
-  using parent_ptr = SuffixTreeNode *;
-  using suffix_link_ptr = SuffixTreeNode *;
+  using parent_ptr = std::shared_ptr<SuffixTreeNode>;
+  using suffix_link_ptr = std::shared_ptr<SuffixTreeNode>;
+  using children_map = std::map<char, node_ptr>;
 
-  SuffixTreeNode()
-      : incomingArcString()
-      , isLeaf(false)
-      , suffixNumber(-1)
-      , parent()
-      , suffixLink()
-      , children()
+  SuffixTreeNode(
+      size_t ID, ssize_t suffixNumber, std::string incomingArcString, parent_ptr parent)
+      : ID_(ID)
+      , suffixNumber_(suffixNumber)
+      , incomingArcString_(incomingArcString)
+      , stringDepth_(parent != nullptr ? parent->StringDepth() + incomingArcString.size() : 0)
+      , parent_(parent)
+      , suffixLink_(nullptr)
   {}
 
-  std::string incomingArcString;
-  bool isLeaf;
-  ssize_t suffixNumber;
+  explicit SuffixTreeNode(size_t ID)
+      : SuffixTreeNode(ID, -1, "", nullptr) {}
 
-  parent_ptr parent;
-  suffix_link_ptr suffixLink;
-  std::map<char, node_ptr> children;
+  size_t ID() const { return ID_;}
+  void ID(size_t ID) { ID_ = ID; }
+
+  ssize_t SuffixNumber() const { return suffixNumber_; }
+  void SuffixNumber(ssize_t SFN) { suffixNumber_ = SFN; }
+
+  size_t StringDepth() const { return stringDepth_; }
+  void StringDepth(size_t D) { stringDepth_ = D; }
+
+  parent_ptr Parent() const { return parent_; }
+  void Parent(parent_ptr P) { parent_ = P; }
+
+  suffix_link_ptr SuffixLink() const { return suffixLink_; }
+  void SuffixLink(suffix_link_ptr SL) { suffixLink_ = SL; }
+
+  typename children_map::iterator begin() { return children_.begin(); }
+  typename children_map::iterator end() { return children_.end(); }
+
+  typename children_map::mapped_type &
+  operator[](const typename children_map::key_type &i) { return children_[i]; }
+
+  typename std::string::iterator
+  BeginIncomingArcString() { return incomingArcString_.begin(); }
+  typename std::string::iterator
+  EndIncomingArcString() { return incomingArcString_.end(); }
+
+  std::string IncomingArcString() const { return incomingArcString_; }
+
+  void
+  Erase(typename std::string::iterator S, typename std::string::iterator E) {
+    incomingArcString_.erase(S, E);
+  }
+
+  bool isLeaf() const { return children_.empty(); }
+
+ private:
+  size_t ID_;
+  ssize_t suffixNumber_;
+
+  std::string incomingArcString_;
+  size_t stringDepth_;
+
+  parent_ptr parent_;
+  suffix_link_ptr suffixLink_;
+  children_map children_;
 };
 
 class SuffixTree {
@@ -60,10 +105,11 @@ class SuffixTree {
       std::pair<node_ptr, typename std::map<char, node_ptr>::const_iterator>;
 
   SuffixTree(const Sequence &s)
-      : root_(new SuffixTreeNode())
-      , last_inserted_ (nullptr) {
+      : root_(new SuffixTreeNode(0))
+      , last_inserted_ (nullptr)
+      , nextNodeID_(1) {
     assert(root_ != nullptr);
-    root_->suffixLink = root_.get();
+    root_->SuffixLink(root_);
     buildSuffixTree(s.begin(), s.end());
   }
 
@@ -73,7 +119,7 @@ class SuffixTree {
 
     dfs_iterator(node_ptr & r)
         : current_(r) {
-      stack_.push_back(std::make_pair(r, r->children.begin()));
+      stack_.push_back(std::make_pair(r, r->begin()));
     }
 
     dfs_iterator & operator++() {
@@ -103,11 +149,9 @@ class SuffixTree {
         node_ptr n = stack_.back().first;
         auto & child_itr = stack_.back().second;
 
-        while (child_itr != n->children.end()) {
+        while (child_itr != n->end()) {
           auto nextNode = child_itr->second;
-          std::cout << "# " << child_itr->first << std::endl;
-          stack_.push_back(std::make_pair(nextNode, nextNode->children.begin()));
-          std::cout << "$ " << child_itr->first << std::endl;
+          stack_.push_back(std::make_pair(nextNode, nextNode->begin()));
           return;
         }
 
@@ -132,20 +176,27 @@ class SuffixTree {
 
   void PrintDot(std::ostream &OS, node_ptr &r);
 
-  void FindPath(node_ptr& p, node_ptr &r, sequence_iterator itr, sequence_iterator end, size_t i);
+  void FindPath(node_ptr p, node_ptr &r, sequence_iterator itr, sequence_iterator end, size_t i);
+
+  node_ptr & NodeHops(sequence_iterator &itr, sequence_iterator end);
 
   void insertSuffix(Sequence::const_iterator B, Sequence::const_iterator E, size_t i) {
-    FindPath(root_, root_, B, E, i);
+    auto startingPoint = NodeHops(B, E);
+    if (startingPoint->Parent() == root_)
+      FindPath(root_, root_, B, E, i);
+    else
+      FindPath(startingPoint->Parent(), startingPoint, B, E, i);
   }
 
   void buildSuffixTree(Sequence::const_iterator B, Sequence::const_iterator E) {
-    for (auto itr = B; itr != E && std::distance(B, itr) < 11; ++itr) {
+    for (auto itr = B; itr != E - 1; ++itr) {
       insertSuffix(itr, E, std::distance(B, itr));
     }
   }
 
   node_ptr root_;
-  SuffixTreeNode * last_inserted_;
+  node_ptr last_inserted_;
+  size_t nextNodeID_;
 };
 
 }  // namespace cpts571
