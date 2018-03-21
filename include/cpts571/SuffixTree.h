@@ -22,8 +22,10 @@
 
 #include <cassert>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
+#include <list>
 #include <map>
 
 #include "cpts571/Sequence.h"
@@ -32,9 +34,9 @@ namespace cpts571 {
 
 class SuffixTreeNode {
  public:
-  using node_ptr  = std::shared_ptr<SuffixTreeNode>;
-  using parent_ptr = std::shared_ptr<SuffixTreeNode>;
-  using suffix_link_ptr = std::shared_ptr<SuffixTreeNode>;
+  using node_ptr  = SuffixTreeNode *;
+  using parent_ptr = SuffixTreeNode *;
+  using suffix_link_ptr = SuffixTreeNode *;
   using children_map = std::map<char, node_ptr>;
 
   SuffixTreeNode(
@@ -45,6 +47,7 @@ class SuffixTreeNode {
       , stringDepth_(parent != nullptr ? parent->StringDepth() + incomingArcString.size() : 0)
       , parent_(parent)
       , suffixLink_(nullptr)
+      , children_()
   {}
 
   explicit SuffixTreeNode(size_t ID)
@@ -76,7 +79,7 @@ class SuffixTreeNode {
   typename std::string::iterator
   EndIncomingArcString() { return incomingArcString_.end(); }
 
-  std::string IncomingArcString() const { return incomingArcString_; }
+  const std::string& IncomingArcString() const { return incomingArcString_; }
 
   void
   Erase(typename std::string::iterator S, typename std::string::iterator E) {
@@ -105,9 +108,13 @@ class SuffixTree {
       std::pair<node_ptr, typename std::map<char, node_ptr>::const_iterator>;
 
   SuffixTree(const Sequence &s)
-      : root_(new SuffixTreeNode(0))
+      : root_(nullptr)
       , last_inserted_ (nullptr)
-      , nextNodeID_(1) {
+      , nextNodeID_(2) {
+
+    nodePool_.push_back(SuffixTreeNode(1));
+    root_ = &nodePool_.front();
+    root_->Parent(root_);
     assert(root_ != nullptr);
     root_->SuffixLink(root_);
     buildSuffixTree(s.begin(), s.end());
@@ -174,26 +181,32 @@ class SuffixTree {
 
  private:
 
-  void PrintDot(std::ostream &OS, node_ptr &r);
+  void PrintDot(std::ostream &OS, node_ptr r);
 
   void FindPath(node_ptr p, node_ptr &r, sequence_iterator itr, sequence_iterator end, size_t i);
 
-  node_ptr & NodeHops(sequence_iterator &itr, sequence_iterator end);
+  node_ptr NodeHops(sequence_iterator &itr, sequence_iterator end);
 
   void insertSuffix(Sequence::const_iterator B, Sequence::const_iterator E, size_t i) {
+    // auto oldB = B;
+    std::cout << "######## Inserting suffix " << i << " " << root_ <<std::endl;
     auto startingPoint = NodeHops(B, E);
-    if (startingPoint->Parent() == root_)
-      FindPath(root_, root_, B, E, i);
-    else
-      FindPath(startingPoint->Parent(), startingPoint, B, E, i);
+    // std::cout << "Saved Comparisons at "<< i <<  ": " << std::distance(oldB, B) << std::endl;
+    // std::cout << "Saving Something -> starting at node " << startingPoint->ID() << std::endl;
+     std::string beforeStep("beforeStep");
+    // std::string afterStep("afterStep");
+    std::ofstream before(beforeStep + std::to_string(i) + ".dot");
+    PrintDot(before);
+    FindPath(startingPoint->Parent(), startingPoint, B, E, i);
   }
 
   void buildSuffixTree(Sequence::const_iterator B, Sequence::const_iterator E) {
-    for (auto itr = B; itr != E - 1; ++itr) {
+    for (auto itr = B; itr != E; ++itr) {
       insertSuffix(itr, E, std::distance(B, itr));
     }
   }
 
+  std::list<SuffixTreeNode> nodePool_;
   node_ptr root_;
   node_ptr last_inserted_;
   size_t nextNodeID_;

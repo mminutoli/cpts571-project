@@ -48,7 +48,6 @@ class SuffixTreeDriver {
     Parse(C.IFileName, C.AlphabetFileName);
     std::string terminal("$");
     sequence_.AppendChunk(terminal.begin(), terminal.end());
-    std::cout << "# " << sequence_ << std::endl;
   }
 
   void Exec() {

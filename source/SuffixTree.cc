@@ -28,13 +28,14 @@ SuffixTree::FindPath(
     SuffixTree::node_ptr p, SuffixTree::node_ptr &r,
     SuffixTree::sequence_iterator itr, SuffixTree::sequence_iterator end,
     size_t i) {
+  if (i == 4) {
+    std::cout << root_ << std::endl;
+  }
   if (r != root_) {
     if (r == nullptr) {
-      r = std::move(
-          std::shared_ptr<SuffixTreeNode>(
-              new SuffixTreeNode(nextNodeID_++, i, std::string(itr, end), p)));
-      if (last_inserted_ != nullptr)
-        last_inserted_->SuffixLink(r);
+      nodePool_.push_back(SuffixTreeNode(nextNodeID_++, i, std::string(itr, end), p));
+      r = &nodePool_.back();
+
       last_inserted_ = r;
       return;
     }
@@ -50,56 +51,53 @@ SuffixTree::FindPath(
       char startChar = *r->BeginIncomingArcString();
       char splitChar = *sItr;
 
-      std::shared_ptr<SuffixTreeNode> splitNode(
-          new SuffixTreeNode(nextNodeID_++, i, std::string(r->BeginIncomingArcString(), sItr),
-                             r->Parent()));
+      nodePool_.push_back(
+          SuffixTreeNode(
+              nextNodeID_++, i, std::string(r->BeginIncomingArcString(), sItr), p));
+      SuffixTreeNode * splitNode = &nodePool_.back();
 
-      last_inserted_->SuffixLink(splitNode);
       last_inserted_ = splitNode;
 
       r->Parent(splitNode);
       r->Erase(r->BeginIncomingArcString(), sItr);
 
       splitNode->operator[](splitChar) = r;
-      splitNode->Parent()->operator[](startChar) = splitNode;
+      p->operator[](startChar) = splitNode;
 
       return;
     } else {
       assert(*itr != *sItr);
-      std::cout << "# *sItr = " << *sItr << std::endl;
-      std::cout << "# *itr = " << *itr << std::endl;
 
       // I need to break the edge
       char startChar = *r->BeginIncomingArcString();
       char splitChar = *sItr;
 
-      std::shared_ptr<SuffixTreeNode> splitNode(
-          new SuffixTreeNode(nextNodeID_++, -1, std::string(r->BeginIncomingArcString(), sItr), r->Parent()));
+      nodePool_.push_back(
+          SuffixTreeNode(
+              nextNodeID_++, -1, std::string(r->BeginIncomingArcString(), sItr), p));
+      SuffixTreeNode * splitNode = &nodePool_.back();
 
       r->Parent(splitNode);
-      std::cout << "# *sItr = " << *sItr << std::endl;
       r->Erase(r->BeginIncomingArcString(), sItr);
 
-      std::cout << "# *sItr = " << *sItr << std::endl;
       splitNode->operator[](splitChar) = r;
-      splitNode->Parent()->operator[](startChar) = splitNode;
+      p->operator[](startChar) = splitNode;
 
-      std::shared_ptr<SuffixTreeNode> theRest(
-          new SuffixTreeNode(nextNodeID_++, i, std::string(itr, end), splitNode));
+      nodePool_.push_back(
+          SuffixTreeNode(nextNodeID_++, i, std::string(itr, end), splitNode));
+      SuffixTreeNode * theRest = &nodePool_.back();
 
-      last_inserted_->SuffixLink(theRest);
       last_inserted_ = theRest;
 
-      std::cout << "# *itr = " << *itr << std::endl;
       splitNode->operator[](*itr) = theRest;
       return;
     }
   } else {
-    FindPath(r, r->operator[](*itr), itr, end, i);
+    FindPath(r, (*r)[*itr], itr, end, i);
   }
 }
 
-void SuffixTree::PrintDot(std::ostream & OS, SuffixTree::node_ptr &r) {
+void SuffixTree::PrintDot(std::ostream & OS, SuffixTree::node_ptr r) {
   assert(r != nullptr);
 
   for (auto v : *r)
@@ -130,32 +128,131 @@ void SuffixTree::PrintDot(std::ostream & OS, SuffixTree::node_ptr &r) {
               << "[ color=green ]" << std::endl;
 }
 
-SuffixTree::node_ptr &
+SuffixTree::node_ptr
 SuffixTree::NodeHops(SuffixTree::sequence_iterator &itr, SuffixTree::sequence_iterator end) {
+  return root_;
   if (last_inserted_ == nullptr) return root_;
 
-  auto U = last_inserted_->Parent();
+  SuffixTreeNode * U = last_inserted_->Parent();
 
-  size_t bethaLenght = 0;
-  size_t alphaLenght = U->StringDepth();
+  ssize_t bethaLenght = 0;
+  ssize_t alphaLenght = U->StringDepth();
 
-  node_ptr & V = root_;
+  node_ptr V = root_;
   if (U->SuffixLink() != nullptr && U != root_) {
     // Case IA
+    std::cout << "Case IA" << std::endl;
     itr += U->StringDepth();
     // Retrieve the smart pointer to V
     V = U->SuffixLink()->Parent();
   } else if (U->SuffixLink() != nullptr && U == root_) {
     // Case IB
+    std::cout << "Case IB" << std::endl;
     V = root_;
-  } else if (U->SuffixLink() == nullptr && U != root_) {
-    // Case IIA
-    V = root_;
+  } else if (U->SuffixLink() == nullptr) {
+    auto UPrime = U->Parent();
+    alphaLenght = UPrime->StringDepth() - 1;
+    bethaLenght = U->StringDepth() - UPrime->StringDepth();
+
+    std::cout << "$$$$ U ID " << U->ID() << std::endl;
+    std::cout << "$$$$ UPrime ID " << UPrime->ID() << std::endl;
+    std::cout << "$$$$ alpha = " << alphaLenght << std::endl;
+    std::cout << "$$$$ betha = " << bethaLenght << std::endl;
+    for (; UPrime->SuffixLink() == nullptr; UPrime = UPrime->Parent()) {
+      bethaLenght += UPrime->StringDepth();
+      alphaLenght -= bethaLenght;
+      std::cout << "$$$$ UPrime ID " << UPrime->ID() << std::endl;
+      std::cout << "$$$$ alpha = " << alphaLenght << std::endl;
+      std::cout << "$$$$ betha = " << bethaLenght << std::endl;
+    }
+
+    std::cout << "$$$$ alpha = " << alphaLenght << std::endl;
+    std::cout << "$$$$ betha = " << bethaLenght << std::endl;
+
+    auto VPrime = UPrime->SuffixLink();
+    std::cout << "$$$$ UPrime ID " << UPrime->ID() << std::endl;
+    std::cout << "$$$$ VPrime ID " << VPrime->ID() << std::endl;
+
+    if (UPrime != root_) {
+      // Case IIA
+      std::cout << "Case IIA" << std::endl;
+      itr += alphaLenght;
+
+      VPrime = VPrime->operator[](*itr);
+      std::cout << "$$$$ VPrime ID " << VPrime->ID() << std::endl;
+      std::cout << "$$$$ VPrime String " << VPrime->IncomingArcString() << std::endl;
+      std::cout << "$$$$ " << *itr << " " << VPrime->IncomingArcString()[0] << std::endl;
+      assert(*itr == *VPrime->BeginIncomingArcString());
+      
+      std::cout << "$$$$ VPrime->IncomingArcString().size() " << VPrime->IncomingArcString().size() << std::endl;
+      std::cout << "$$$$ std::distance(itr, end) " << std::distance(itr, end) << std::endl;
+      while (bethaLenght > 0 && bethaLenght > VPrime->IncomingArcString().size() &&
+             std::distance(itr, end) > VPrime->IncomingArcString().size()) {
+        std::cout << "$$$$ VPrime->IncomingArcString().size() " << VPrime->IncomingArcString().size() << std::endl;
+        std::cout << "$$$$ std::distance(itr, end) " << std::distance(itr, end) << std::endl;
+        std::cout << "$$$$ " << *itr << " " << VPrime->IncomingArcString()[0] << std::endl;
+
+        std::cout << "$$$$ HERE " << *itr;
+        itr += VPrime->IncomingArcString().size();
+        std::cout << " -> " << *itr << std::endl;
+        bethaLenght -= VPrime->IncomingArcString().size();
+        VPrime = VPrime->operator[](*itr);
+        assert(VPrime != nullptr);
+        std::cout << "$$$$ betha = " << bethaLenght << std::endl;
+      }
+
+      V = VPrime;
+      U->SuffixLink(V);
+    } else {
+      // Case IIB : U' is the root
+      bethaLenght -= 1;
+
+      std::cout << "Case IIB : betha = " << bethaLenght << std::endl;
+
+      auto VPrime = UPrime->SuffixLink();
+      
+      while (bethaLenght > 0 && bethaLenght > VPrime->IncomingArcString().size() &&
+             std::distance(itr, end) > VPrime->IncomingArcString().size()) {
+        std::cout << "$$$$ HERE " << *itr;
+        itr += VPrime->IncomingArcString().size();
+        std::cout << " -> " << *itr << std::endl;
+        bethaLenght -= VPrime->IncomingArcString().size();
+        VPrime = VPrime->operator[](*itr);
+      }
+
+      if (bethaLenght > 0 && bethaLenght < VPrime->IncomingArcString().size()) {
+        auto p = VPrime; 
+        VPrime = VPrime->operator[](*itr);
+
+        itr += bethaLenght;
+
+        // I need to break the edge
+        char startChar = *VPrime->BeginIncomingArcString();
+        char splitChar = *(VPrime->BeginIncomingArcString() + bethaLenght);
+
+        nodePool_.push_back(
+            SuffixTreeNode(
+                nextNodeID_++, -1, std::string(VPrime->BeginIncomingArcString(), VPrime->BeginIncomingArcString() + bethaLenght), VPrime->Parent()));
+        SuffixTreeNode * splitNode = &nodePool_.back();
+
+        VPrime->Parent(splitNode);
+        VPrime->Erase(VPrime->BeginIncomingArcString(), VPrime->BeginIncomingArcString() + bethaLenght);
+
+        splitNode->operator[](splitChar) = VPrime;
+        p->operator[](startChar) = splitNode;
+
+        VPrime = splitNode;
+      }
+
+      std::cout << "Case IIB : betha = " << bethaLenght << std::endl;
+      V = VPrime;
+      U->SuffixLink(V);
+    }
   } else {
-    // Case IIB
-    V = root_;
+    assert(false);
   }
 
+  std::cout << "Will start at node " << V->ID() << std::endl;
   return V;
 }
 
