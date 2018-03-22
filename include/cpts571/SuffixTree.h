@@ -21,11 +21,10 @@
 #define SUFFIX_TREE_H
 
 #include <cassert>
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
-#include <list>
+#include <deque>
 #include <map>
 
 #include "cpts571/Sequence.h"
@@ -38,20 +37,20 @@ class SuffixTreeNode {
   using parent_ptr = SuffixTreeNode *;
   using suffix_link_ptr = SuffixTreeNode *;
   using children_map = std::map<char, node_ptr>;
+  using string_const_iterator = typename std::string::const_iterator;
 
   SuffixTreeNode(
-      size_t ID, ssize_t suffixNumber, std::string incomingArcString, parent_ptr parent)
+      size_t ID, ssize_t suffixNumber,
+      string_const_iterator SStart, string_const_iterator SEnd, parent_ptr parent)
       : ID_(ID)
       , suffixNumber_(suffixNumber)
-      , incomingArcString_(incomingArcString)
-      , stringDepth_(parent != nullptr ? parent->StringDepth() + incomingArcString.size() : 0)
+      , arcStringStart_(SStart)
+      , arcStringEnd_(SEnd)
+      , stringDepth_(parent != nullptr ? parent->StringDepth() + std::distance(SStart, SEnd) : 0)
       , parent_(parent)
       , suffixLink_(nullptr)
       , children_()
   {}
-
-  explicit SuffixTreeNode(size_t ID)
-      : SuffixTreeNode(ID, -1, "", nullptr) {}
 
   size_t ID() const { return ID_;}
   void ID(size_t ID) { ID_ = ID; }
@@ -74,16 +73,16 @@ class SuffixTreeNode {
   typename children_map::mapped_type &
   operator[](const typename children_map::key_type &i) { return children_[i]; }
 
-  typename std::string::iterator
-  BeginIncomingArcString() { return incomingArcString_.begin(); }
-  typename std::string::iterator
-  EndIncomingArcString() { return incomingArcString_.end(); }
+  typename std::string::const_iterator
+  BeginIncomingArcString() { return arcStringStart_; }
+  typename std::string::const_iterator
+  EndIncomingArcString() { return arcStringEnd_; }
 
-  const std::string& IncomingArcString() const { return incomingArcString_; }
+  std::string IncomingArcString() const { return std::string(arcStringStart_, arcStringEnd_); }
 
   void
-  Erase(typename std::string::iterator S, typename std::string::iterator E) {
-    incomingArcString_.erase(S, E);
+  MoveStartTo(string_const_iterator S) {
+    arcStringStart_ = S;
   }
 
   bool isLeaf() const { return children_.empty(); }
@@ -92,7 +91,9 @@ class SuffixTreeNode {
   size_t ID_;
   ssize_t suffixNumber_;
 
-  std::string incomingArcString_;
+  string_const_iterator arcStringStart_;
+  string_const_iterator arcStringEnd_;
+
   size_t stringDepth_;
 
   parent_ptr parent_;
@@ -108,11 +109,12 @@ class SuffixTree {
       std::pair<node_ptr, typename std::map<char, node_ptr>::const_iterator>;
 
   SuffixTree(const Sequence &s)
-      : root_(nullptr)
+      : sequence_(s)
+      , root_(nullptr)
       , last_inserted_ (nullptr)
       , nextNodeID_(2) {
 
-    nodePool_.push_back(SuffixTreeNode(1));
+    nodePool_.push_back(SuffixTreeNode(1, -1, sequence_.begin(), sequence_.begin(), nullptr));
     root_ = &nodePool_.front();
     root_->Parent(root_);
     assert(root_ != nullptr);
@@ -224,7 +226,8 @@ class SuffixTree {
     }
   }
 
-  std::list<SuffixTreeNode> nodePool_;
+  Sequence sequence_;
+  std::deque<SuffixTreeNode> nodePool_;
   node_ptr root_;
   node_ptr last_inserted_;
   size_t nextNodeID_;

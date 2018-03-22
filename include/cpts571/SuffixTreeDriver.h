@@ -107,11 +107,16 @@ class SuffixTreeDriver {
       }
     }
 
+    size_t internalNodes = numberOfNodes - numberOfLeaves;
     OS << "# Total number of nodes : " << numberOfNodes << "\n"
        << "# Number of leaves : " << numberOfLeaves << "\n"
-       << "# Number of internal nodes : " << numberOfNodes - numberOfLeaves << "\n"
+       << "# Number of internal nodes : " << internalNodes << "\n"
        << "# Max Depth : " << maxDepth << "\n"
-       << "# Average Depth : " << double(totDepth) / (numberOfNodes - numberOfLeaves)
+       << "# Average Depth : " << double(totDepth) / internalNodes << "\n"
+       << "# Esistimate of the SuffixTree (Bytes) : "
+       << sizeof(SuffixTreeNode) * numberOfNodes +
+        std::distance(sequence_.begin(), sequence_.end()) * sizeof(std::string::value_type) +
+        sizeof(SuffixTreeNode::children_map::value_type) * internalNodes
        << std::endl;
   }
 

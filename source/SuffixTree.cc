@@ -73,7 +73,7 @@ SuffixTree::FindPath(
     size_t i) {
   if (r == nullptr) {
     assert(itr != end);
-    nodePool_.push_back(SuffixTreeNode(nextNodeID_++, i, std::string(itr, end), p));
+    nodePool_.push_back(SuffixTreeNode(nextNodeID_++, i, itr, end, p));
     r = &nodePool_.back();
 
     last_inserted_ = r;
@@ -93,7 +93,7 @@ SuffixTree::FindPath(
 
     // Add the remaninig part
     nodePool_.push_back(
-        SuffixTreeNode(nextNodeID_++, i, std::string(itr, end), r));
+        SuffixTreeNode(nextNodeID_++, i, itr, end, r));
     SuffixTreeNode * theRest = &nodePool_.back();
 
     last_inserted_ = theRest;
@@ -142,9 +142,9 @@ SuffixTree::SplitNode(node_ptr r, ptrdiff_t distance) {
     nodePool_.push_back(
         SuffixTreeNode(
             nextNodeID_++, r->StringDepth() - std::distance(SP, r->EndIncomingArcString()),
-            std::string(B, SP), oldParentOfR));
+            B, SP, oldParentOfR));
     // Update r string.
-    r->Erase(B, SP);
+    r->MoveStartTo(SP);
   }
 
   SuffixTreeNode * splitNode = &nodePool_.back();

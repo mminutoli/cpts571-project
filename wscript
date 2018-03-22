@@ -21,7 +21,7 @@ def configure(conf):
   conf.check_boost('program_options')
   
   conf.check_cfg(
-    package='rapidjson', args=['--cflags'], uselib_store='RAPIDJSON')
+    package='RapidJSON', args=['--cflags'], uselib_store='RAPIDJSON')
 
   conf.load('flex')
   conf.env.FLEXFLAG = ['-c++']

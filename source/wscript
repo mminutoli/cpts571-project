@@ -8,7 +8,7 @@ def build(bld):
       target = 'sequence_parser',
       includes = '.',
       export_includes = '.',
-      use='project-headers')
+      use=[ 'project-headers', 'RAPIDJSON'])
 
   bld(features = 'cxx cxxstlib',
       source = [ 'SequenceAlignmentDriver.cc' ],
