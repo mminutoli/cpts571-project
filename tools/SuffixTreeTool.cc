@@ -14,7 +14,13 @@ void ParseCmdOptions(int argc, char **argv,
       ("alphabet-file,a", po::value<std::string>(&CFG.AlphabetFileName),
        "The file containing the alphabet")
       ("dot", po::value<std::string>(&CFG.DotOutput),
-       "The file name of the Dot output file");
+       "The file name of the Dot output file")
+      ("stats", po::value<std::string>(&CFG.StatsOutput),
+       "The file name of the Stats output file")
+      ("bwt", po::value<std::string>(&CFG.BWTOutput),
+       "The file name of the BWT output file")
+      ("post", po::value<std::string>(&CFG.PostOrderOutput),
+       "The file name of the Post Order visit output file");
 ;
 
   po::variables_map VM;

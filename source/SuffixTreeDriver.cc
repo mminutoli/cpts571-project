@@ -35,8 +35,6 @@ SuffixTreeDriver::Parse(const std::string &IF, const std::string &AF) {
   std::ifstream alphabetFile(AF.c_str());
 
   if (!alphabetFile.good()) return;
-
-  // Parse alphabet File
 }
 
 }

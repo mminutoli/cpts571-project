@@ -124,7 +124,7 @@ class SuffixTree {
    public:
     dfs_iterator() = default;
 
-    dfs_iterator(node_ptr & r)
+    dfs_iterator(node_ptr r)
         : current_(r) {
       stack_.push_back(std::make_pair(r, r->begin()));
     }
@@ -158,6 +158,7 @@ class SuffixTree {
 
         while (child_itr != n->end()) {
           auto nextNode = child_itr->second;
+          child_itr++;
           stack_.push_back(std::make_pair(nextNode, nextNode->begin()));
           return;
         }
@@ -173,32 +174,49 @@ class SuffixTree {
   dfs_iterator begin() { return dfs_iterator(root_); }
   dfs_iterator end() { return dfs_iterator(); }
 
-  void PrintDot(std::ostream &OS) {
-    OS << "digraph G {" << std::endl;
-    PrintDot(OS, root_);
-    OS << "}" << std::endl;
+  std::string BTW(Sequence &S) {
+    std::string result(S.length(), '\0');
+
+    size_t i = 0;
+    for (auto v : *this) {
+      if (v->isLeaf()) {
+        auto leaf = v->SuffixNumber();
+        result[i++] = S[ leaf > 0 ? leaf - 1 : S.length() - 1];
+      }
+    }
+
+    return result;
   }
 
+  void PostOrderPrint(std::ostream &OS) {
+    PostOrderPrint(root_, OS);
+  }
+
+  void PostOrderPrint(node_ptr r, std::ostream &OS) {
+    if (r->isLeaf()) {
+      OS << r->ID() << std::endl;
+      return;
+    }
+
+    for (auto child : *r) {
+      PostOrderPrint(child.second, OS);
+    }
+
+    OS << r->ID() << std::endl;
+  }
+
+  void PrintDot(std::ostream &OS);
+
  private:
+  node_ptr SplitNode(node_ptr r, ptrdiff_t distance);
 
   void PrintDot(std::ostream &OS, node_ptr r);
 
   void FindPath(node_ptr p, node_ptr &r, sequence_iterator itr, sequence_iterator end, size_t i);
 
-  node_ptr NodeHops(sequence_iterator &itr, sequence_iterator end);
+  node_ptr NodeHops(node_ptr r, sequence_iterator itr, sequence_iterator end);
 
-  void insertSuffix(Sequence::const_iterator B, Sequence::const_iterator E, size_t i) {
-    // auto oldB = B;
-    std::cout << "######## Inserting suffix " << i << " " << root_ <<std::endl;
-    auto startingPoint = NodeHops(B, E);
-    // std::cout << "Saved Comparisons at "<< i <<  ": " << std::distance(oldB, B) << std::endl;
-    // std::cout << "Saving Something -> starting at node " << startingPoint->ID() << std::endl;
-     std::string beforeStep("beforeStep");
-    // std::string afterStep("afterStep");
-    std::ofstream before(beforeStep + std::to_string(i) + ".dot");
-    PrintDot(before);
-    FindPath(startingPoint->Parent(), startingPoint, B, E, i);
-  }
+  void insertSuffix(Sequence::const_iterator B, Sequence::const_iterator E, size_t i);
 
   void buildSuffixTree(Sequence::const_iterator B, Sequence::const_iterator E) {
     for (auto itr = B; itr != E; ++itr) {
