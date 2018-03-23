@@ -17,7 +17,7 @@ To configure and build the project run the following commands from the root of t
 ./waf buid
 ```
 
-## Usage
+## Usage of the Alignment Tool
 
 To execute the alignment tool from the root of this repository:
 
@@ -25,7 +25,7 @@ To execute the alignment tool from the root of this repository:
 ./build/tools/alignment_tool
 ```
 
-The previous command should print the help message of the tool.  An example of usage are:
+The previous command should print the help message of the tool.  Example of usage are:
 - Local alignment with the score table in config.json
   ```shell
   ./build/tools/alignment_tool -i ./tests/Human-Mouse-BRCA2-cds.fasta -l -c ./tests/config.json
@@ -38,3 +38,23 @@ The previous command should print the help message of the tool.  An example of u
   ```shell
   ./build/tools/alignment_tool -i ./tests/Human-Mouse-BRCA2-cds.fasta
   ```
+
+## Usage of the SuffixTree Tool
+
+To execute the alignment tool from the root of this repository:
+
+```shell
+./build/tools/suffixtree_tool
+```
+
+The previous command should print the help message of the tool.  Examples of usage are:
+- Build and Print the SuffixTree as Dot file:
+  ```shell
+  ./build/tools/suffixtree_tool -i tests/s1.fasta --dot banana.dot
+  ```
+- Build the SuffixTree and save to file the BWT and the Post Order
+  ```shell
+  ./build/tools/suffixtree_tool -i ./tests/s1.fasta --bwt banana.bwt --post banana.post
+  ```
+
+The directory output-files contains dumps of the outputs requested.  The experiment folder contains the scripts used to generate them.
