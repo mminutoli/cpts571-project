@@ -13,14 +13,14 @@ compiled with GCC 7.2.1 with the "-Ofast" and "-march=native" compiler flag.
 Execution times were collected with the performance governor enabled (CPU at
 maximum speed).  The execution time, reported in the table in microseconds, are
 the result of a single run of the program without any performance
-instrumentation.  The memory usage results were colleced in a successive run
+instrumentation.  The memory usage results were collected in a successive run
 with Valgrind's /massif/ tool.
 
 * Data
 
-
+#+NAME: data
 |------------------+--------+------------+------------+---------|
-| *String*         | *Time* | *Mem Used* | *Mem Est.* |    *BP* |
+| *Input*          | *Time* | *Mem Used* | *Mem Est.* |    *BP* |
 |------------------+--------+------------+------------+---------|
 | s1               |      5 |     112056 |        951 |       6 |
 | s2               |      8 |     112056 |       1644 |      10 |
@@ -31,3 +31,103 @@ with Valgrind's /massif/ tool.
 | Yeast's Chr12    | 914812 |  300914288 |  154486176 | 1078175 |
 
 * Plots
+
+Figure [[fig:performance]] and Figure [[fig:memoryusage]] show how the execution time
+and the memory usage grow while increasing the input size.  In both plots, the
+observed trend is that execution time and the memory footprint grow linearly
+with the size of the input as expected since the implementation uses McCreight's
+method and the size of the nodes in the three is $O(1)$ (roughly 40Bytes).
+
+Figure [[fig:memoryusage]] shows that for the inputs /s1/ and /s2/ (first two points
+in the plot) the sampled maximum heap size by Valgrind is 112056 Bytes.  This
+behavior can be intuitively explained by the limited size of the input and the
+way memory allocators (malloc/new) request memory blocks to the operating
+system.  In fact, to minimize the performance penalty of system calls, they
+usually ask for large blocks and due to the limited size of the input we never
+exceeded the already available heap.
+
+#+NAME: fig:performance
+#+BEGIN_SRC python :results file :exports results :var data=data
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = data[1:]
+
+labels = [a[0] for a in data]
+times  = [a[1] for a in data]
+BPs    = [a[4] for a in data]
+
+a, = plt.loglog(BPs, times, label='execution time',  marker='x')
+
+x = 10.0**np.linspace(0.0, 6.0, 20)
+y = x
+b, = plt.loglog(x, y, label='ideal (linear) trend')
+
+plt.grid(True)
+plt.xlabel("Number of BP of the Input")
+plt.ylabel("Execution time (microseconds)")
+
+plt.legend(handles=[a,b],loc="upper left")
+
+filename = "execution-time.png"
+plt.savefig(filename)
+
+return filename
+#+END_SRC
+#+CAPTION: Execution time of SuffixTree construction.
+#+LABEL: fig:performance
+#+ATTR_LATEX: :width 0.6\textwidth
+#+RESULTS: fig:performance
+[[file:execution-time.png]]
+
+#+NAME: fig:memoryusage
+#+BEGIN_SRC python :results file :exports results :var data=data
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = data[1:]
+
+labels = [a[0] for a in data]
+estimated  = [a[3] for a in data]
+sampled  = [a[2] for a in data]
+BPs    = [a[4] for a in data]
+
+a, = plt.loglog(BPs, estimated, label='Estimated SuffixTree size',  marker='x')
+b, = plt.loglog(BPs, sampled, label='Sampled Max Heap Size with Valgrind',  marker='o')
+
+x = 10.0**np.linspace(0.0, 6.0, 20)
+y = x
+c, = plt.loglog(x, y, label='ideal linear trend')
+
+plt.grid(True)
+plt.xlabel("Number of BP of the Input")
+plt.ylabel("Memory usage (Bytes)")
+
+plt.legend(handles=[a,b,c],loc="upper left")
+
+filename = "memory-usage.png"
+plt.savefig(filename)
+
+return filename
+#+END_SRC
+#+CAPTION: Memory usage (heap) estimated and sampled with Valgrind.
+#+LABEL: fig:memoryusage
+#+ATTR_LATEX: :width 0.6\textwidth
+#+RESULTS: fig:memoryusage
+
+* Exact Matching Repeat
+
+#+NAME: match
+|------------------+---------+-------+----------|
+| *Input*          | *Start* | *End* | *Length* |
+|------------------+---------+-------+----------|
+| s1               |       1 |     4 |        3 |
+| s2               |       1 |     5 |        4 |
+| Opsin human      |    1810 |  1828 |       18 |
+| Opsin mouse      |    2838 |  2852 |       14 |
+| Human BRCA2 gene |    3389 |  3403 |       14 |
+| Sylco            |   88130 | 88178 |       48 |
+| Yeast's Chr12    |       - |     - |        - |
+#+TBLFM: @2$4=$3 - $2::@3$4=$3 - $2::@4$4=$3 - $2::@5$4=$3 - $2::@6$4=$3 - $2::@7$4=$3 - $2
+
+The last experiment didn't terminate.

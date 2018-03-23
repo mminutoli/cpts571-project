@@ -211,8 +211,7 @@ class SuffixTree {
   std::tuple<size_t, size_t, std::string> LCS() const {
     // For all possible pairs of suffixes
     const_node_ptr bestLCA = root_;
-    size_t startP = 0;
-    size_t endP   = 0;
+    const_node_ptr bestI   = root_;
     for (auto p1Itr = begin_leaves(), p1End = end_leaves() - 1;
          p1Itr != p1End; ++p1Itr) {
       for (auto p2Itr = p1Itr + 1, p2End = end_leaves();
@@ -222,17 +221,17 @@ class SuffixTree {
 
         if (currentLCA && currentLCA->StringDepth() > bestLCA->StringDepth()) {
           bestLCA = currentLCA;
-          startP = p1Itr->SuffixNumber();
-          endP   = p2Itr->SuffixNumber();
+          bestI = &*p1Itr;
         }
       }
     }
 
-    auto end = bestLCA->EndIncomingArcString();
+    size_t startP = bestI->SuffixNumber();
+    size_t length = bestLCA->StringDepth();
+    auto end = bestLCA->BeginIncomingArcString() + length;
     // Climb up.
-    while(bestLCA->Parent() != root_) bestLCA = bestLCA->Parent();
-    std::string s(bestLCA->BeginIncomingArcString(), end);
-    return std::make_tuple(startP, endP, s);
+    std::string s(sequence_.begin() + startP, sequence_.begin() + startP + length);
+    return std::make_tuple(startP, startP + length, s);
   }
 
   const_node_ptr
