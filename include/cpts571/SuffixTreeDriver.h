@@ -25,6 +25,7 @@
 #include <fstream>
 #include <ostream>
 #include <iostream>
+#include <tuple>
 
 #include "cpts571/Alignment.h"
 #include "cpts571/SequenceFileScanner.h"
@@ -42,6 +43,7 @@ struct SuffixTreeDriverConfiguration {
   std::string StatsOutput;
   std::string BWTOutput;
   std::string PostOrderOutput;
+  std::string DFSOutput;
   bool PrintLCS;
 };
 
@@ -81,8 +83,21 @@ class SuffixTreeDriver {
       ST.PostOrderPrint(PostOrderS);
     }
 
-    if (config_.PrintLCS)
-      std::cout << ST.LCS() << std::endl;;
+    if (!config_.DFSOutput.empty()) {
+      std::ofstream DFSS(config_.PostOrderOutput);
+      ST.DFSPrint(DFSS);
+    }
+
+    if (config_.PrintLCS) {
+      std::string s;
+      size_t start;
+      size_t end;
+      std::tie(start, end, s) = ST.LCS();
+      std::cout << "start : " << start
+                << "\nend : " << end
+                << "\nstring : " << s
+                << std::endl;
+    }
 
     std::cout
         << "SuffixTree build in : "
@@ -98,30 +113,7 @@ class SuffixTreeDriver {
   }
 
   void PrintStats(SuffixTree &ST, std::ostream &OS) {
-    size_t numberOfNodes = 0;
-    size_t numberOfLeaves = 0;
-    size_t totDepth = 0;
-    size_t maxDepth = 0;
-    for (auto v : ST) {
-      ++numberOfNodes;
-      if (v->isLeaf()) ++numberOfLeaves;
-      else {
-        maxDepth = std::max(maxDepth, v->StringDepth());
-        totDepth += v->StringDepth();
-      }
-    }
-
-    size_t internalNodes = numberOfNodes - numberOfLeaves;
-    OS << "# Total number of nodes : " << numberOfNodes << "\n"
-       << "# Number of leaves : " << numberOfLeaves << "\n"
-       << "# Number of internal nodes : " << internalNodes << "\n"
-       << "# Max Depth : " << maxDepth << "\n"
-       << "# Average Depth : " << double(totDepth) / internalNodes << "\n"
-       << "# Esistimate of the SuffixTree (Bytes) : "
-       << sizeof(SuffixTreeNode) * numberOfNodes +
-        std::distance(sequence_.begin(), sequence_.end()) * sizeof(std::string::value_type) +
-        sizeof(SuffixTreeNode::children_map::value_type) * internalNodes
-       << std::endl;
+    ST.PrintStats(OS);
   }
 
 private:

@@ -27,6 +27,7 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <tuple>
 
 #include "cpts571/Sequence.h"
 
@@ -35,6 +36,7 @@ namespace cpts571 {
 class SuffixTreeNode {
  public:
   using node_ptr  = SuffixTreeNode *;
+  using const_node_ptr = SuffixTreeNode const *;
   using parent_ptr = SuffixTreeNode *;
   using suffix_link_ptr = SuffixTreeNode *;
   using children_map = std::map<char, node_ptr>;
@@ -75,9 +77,9 @@ class SuffixTreeNode {
   operator[](const typename children_map::key_type &i) { return children_[i]; }
 
   typename std::string::const_iterator
-  BeginIncomingArcString() { return arcStringStart_; }
+  BeginIncomingArcString() const { return arcStringStart_; }
   typename std::string::const_iterator
-  EndIncomingArcString() { return arcStringEnd_; }
+  EndIncomingArcString() const { return arcStringEnd_; }
 
   std::string IncomingArcString() const { return std::string(arcStringStart_, arcStringEnd_); }
 
@@ -105,6 +107,7 @@ class SuffixTreeNode {
 class SuffixTree {
  public:
   using node_ptr = SuffixTreeNode::node_ptr;
+  using const_node_ptr = SuffixTreeNode const *;
   using sequence_iterator = Sequence::const_iterator;
   using stack_element =
       std::pair<node_ptr, typename std::map<char, node_ptr>::const_iterator>;
@@ -183,6 +186,12 @@ class SuffixTree {
   typename std::deque<SuffixTreeNode>::iterator
   end_leaves() { return leavesPool_.end(); }
 
+  typename std::deque<SuffixTreeNode>::const_iterator
+  begin_leaves() const { return leavesPool_.begin(); }
+
+  typename std::deque<SuffixTreeNode>::const_iterator
+  end_leaves() const { return leavesPool_.end(); }
+
   std::string BTW(Sequence &S) {
     std::string result(S.length(), '\0');
 
@@ -199,18 +208,22 @@ class SuffixTree {
     return result;
   }
 
-  std::string LCS() {
+  std::tuple<size_t, size_t, std::string> LCS() const {
     // For all possible pairs of suffixes
-    node_ptr bestLCA = root_;
+    const_node_ptr bestLCA = root_;
+    size_t startP = 0;
+    size_t endP   = 0;
     for (auto p1Itr = begin_leaves(), p1End = end_leaves() - 1;
          p1Itr != p1End; ++p1Itr) {
       for (auto p2Itr = p1Itr + 1, p2End = end_leaves();
            p2Itr != p2End; ++p2Itr) {
 
-        node_ptr currentLCA = LCA(&*p1Itr, &*p2Itr, bestLCA->StringDepth());
+        const_node_ptr currentLCA = LCA(&*p1Itr, &*p2Itr, bestLCA->StringDepth());
 
         if (currentLCA && currentLCA->StringDepth() > bestLCA->StringDepth()) {
           bestLCA = currentLCA;
+          startP = p1Itr->SuffixNumber();
+          endP   = p2Itr->SuffixNumber();
         }
       }
     }
@@ -218,11 +231,12 @@ class SuffixTree {
     auto end = bestLCA->EndIncomingArcString();
     // Climb up.
     while(bestLCA->Parent() != root_) bestLCA = bestLCA->Parent();
-    return std::string(bestLCA->BeginIncomingArcString(), end);
+    std::string s(bestLCA->BeginIncomingArcString(), end);
+    return std::make_tuple(startP, endP, s);
   }
 
-  node_ptr
-  LCA(node_ptr S1, node_ptr S2, size_t bound = 0) {
+  const_node_ptr
+  LCA(const_node_ptr S1, const_node_ptr S2, size_t bound = 0) const {
     // We reached the top of the tree
     if(S1->StringDepth() == 0 || S2->StringDepth() == 0) return root_;
 
@@ -240,6 +254,13 @@ class SuffixTree {
       return LCA(S1->Parent(), S2, bound);
     else
       return LCA(S1, S2->Parent(), bound);
+  }
+
+  void DFSPrint(std::ostream &OS) {
+    for (auto node : *this) {
+      OS << node->ID() << '\n';
+    }
+    OS << std::endl;
   }
 
   void PostOrderPrint(std::ostream &OS) {
@@ -260,6 +281,29 @@ class SuffixTree {
   }
 
   void PrintDot(std::ostream &OS);
+
+  void PrintStats(std::ostream &OS) {
+    size_t numberOfNodes = internalNodesPool_.size() + leavesPool_.size();
+    size_t numberOfLeaves = leavesPool_.size();
+    size_t totDepth = 0;
+    size_t maxDepth = 0;
+    for (auto v : *this) {
+      maxDepth = std::max(maxDepth, v->StringDepth());
+      totDepth += v->StringDepth();
+    }
+
+    size_t internalNodes = internalNodesPool_.size();
+    OS << "# Total number of nodes : " << numberOfNodes << "\n"
+       << "# Number of leaves : " << numberOfLeaves << "\n"
+       << "# Number of internal nodes : " << internalNodes << "\n"
+       << "# Max Depth : " << maxDepth << "\n"
+       << "# Average Depth : " << double(totDepth) / internalNodes << "\n"
+       << "# Esistimate of the SuffixTree (Bytes) : "
+       << sizeof(SuffixTreeNode) * numberOfNodes +
+        std::distance(sequence_.begin(), sequence_.end()) * sizeof(std::string::value_type) +
+        sizeof(SuffixTreeNode::children_map::value_type) * internalNodes
+       << std::endl;
+  }
 
  private:
   node_ptr SplitNode(node_ptr r, ptrdiff_t distance);

@@ -1,3 +1,9 @@
+#+TITLE: Experiments Report
+#+AUTHOR: Marco Minutoli
+#+EMAIL: marco.minutoli@pnnl.gov
+
+#+OPTIONS: tex:t toc:nil
+
 * Experimental SetUp
 
 The experiments were run on a Intel Xeon E5645 @ 2.40GHz (12MB cache size)
@@ -12,14 +18,16 @@ with Valgrind's /massif/ tool.
 
 * Data
 
-| String                      | Execution Time | Memory Usage |      BP |
-|-----------------------------+----------------+--------------+---------|
-| Opsin gene in human         |           1398 |       988744 |    3302 |
-| Opsin gene in mouse         |           1625 |      1148368 |    3843 |
-| Human BRCA2 gene            |           5256 |      3235568 |   11382 |
-| Tomato's chloroplast genome |          97944 |     42926488 |  155461 |
-| Yeast's Chromosome 12       |         914812 |    300914288 | 1078175 |
 
+|------------------+--------+------------+------------+---------|
+| *String*         | *Time* | *Mem Used* | *Mem Est.* |    *BP* |
+|------------------+--------+------------+------------+---------|
+| s1               |      5 |     112056 |        951 |       6 |
+| s2               |      8 |     112056 |       1644 |      10 |
+| Opsin human      |   1398 |     988744 |     469623 |    3302 |
+| Opsin mouse      |   1625 |    1148368 |     548580 |    3843 |
+| Human BRCA2 gene |   5256 |    3235568 |    1622823 |   11382 |
+| Sylco            |  97944 |   42926488 |   22093830 |  155461 |
+| Yeast's Chr12    | 914812 |  300914288 |  154486176 | 1078175 |
 
-
-
+* Plots

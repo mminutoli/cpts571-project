@@ -21,7 +21,9 @@ void ParseCmdOptions(int argc, char **argv,
        "The file name of the BWT output file")
       ("post", po::value<std::string>(&CFG.PostOrderOutput),
        "The file name of the Post Order visit output file")
-      ("lcp", po::bool_switch(&CFG.PrintLCS),
+      ("dfs", po::value<std::string>(&CFG.DFSOutput),
+       "The file name of the DFS visit output file")
+      ("lcs", po::bool_switch(&CFG.PrintLCS),
        "Print the LCS in the SuffixTree");
 ;
 
