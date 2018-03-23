@@ -1,0 +1,25 @@
+* Experimental SetUp
+
+The experiments were run on a Intel Xeon E5645 @ 2.40GHz (12MB cache size)
+equipped with 24GB of RAM.  The system is running Fedora 27.  The program was
+compiled with GCC 7.2.1 with the "-Ofast" and "-march=native" compiler flag.
+
+Execution times were collected with the performance governor enabled (CPU at
+maximum speed).  The execution time, reported in the table in microseconds, are
+the result of a single run of the program without any performance
+instrumentation.  The memory usage results were colleced in a successive run
+with Valgrind's /massif/ tool.
+
+* Data
+
+| String                      | Execution Time | Memory Usage |      BP |
+|-----------------------------+----------------+--------------+---------|
+| Opsin gene in human         |           1398 |       988744 |    3302 |
+| Opsin gene in mouse         |           1625 |      1148368 |    3843 |
+| Human BRCA2 gene            |           5256 |      3235568 |   11382 |
+| Tomato's chloroplast genome |          97944 |     42926488 |  155461 |
+| Yeast's Chromosome 12       |         914812 |    300914288 | 1078175 |
+
+
+
+
