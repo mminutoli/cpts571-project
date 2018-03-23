@@ -20,7 +20,9 @@ void ParseCmdOptions(int argc, char **argv,
       ("bwt", po::value<std::string>(&CFG.BWTOutput),
        "The file name of the BWT output file")
       ("post", po::value<std::string>(&CFG.PostOrderOutput),
-       "The file name of the Post Order visit output file");
+       "The file name of the Post Order visit output file")
+      ("lcp", po::bool_switch(&CFG.PrintLCS),
+       "Print the LCS in the SuffixTree");
 ;
 
   po::variables_map VM;

@@ -73,8 +73,9 @@ SuffixTree::FindPath(
     size_t i) {
   if (r == nullptr) {
     assert(itr != end);
-    nodePool_.push_back(SuffixTreeNode(nextNodeID_++, i, itr, end, p));
-    r = &nodePool_.back();
+    // Adding a leaf
+    leavesPool_.push_back(SuffixTreeNode(nextNodeID_++, i, itr, end, p));
+    r = &leavesPool_.back();
 
     last_inserted_ = r;
     return;
@@ -92,9 +93,9 @@ SuffixTree::FindPath(
     SuffixTreeNode * splitNode = SplitNode(r, std::distance(r->BeginIncomingArcString(), sItr));
 
     // Add the remaninig part
-    nodePool_.push_back(
+    leavesPool_.push_back(
         SuffixTreeNode(nextNodeID_++, i, itr, end, r));
-    SuffixTreeNode * theRest = &nodePool_.back();
+    SuffixTreeNode * theRest = &leavesPool_.back();
 
     last_inserted_ = theRest;
     (*splitNode)[*itr] = theRest;
@@ -138,8 +139,9 @@ SuffixTree::SplitNode(node_ptr r, ptrdiff_t distance) {
   {
     auto B  = r->BeginIncomingArcString();
     auto SP = r->BeginIncomingArcString() + distance;
-      
-    nodePool_.push_back(
+
+    // Split nodes are always internal
+    internalNodesPool_.push_back(
         SuffixTreeNode(
             nextNodeID_++, r->StringDepth() - std::distance(SP, r->EndIncomingArcString()),
             B, SP, oldParentOfR));
@@ -147,7 +149,8 @@ SuffixTree::SplitNode(node_ptr r, ptrdiff_t distance) {
     r->MoveStartTo(SP);
   }
 
-  SuffixTreeNode * splitNode = &nodePool_.back();
+  // We are splitting edges preserving leaves.
+  SuffixTreeNode * splitNode = &internalNodesPool_.back();
 
   // Connect r -> splitNode
   r->Parent(splitNode);

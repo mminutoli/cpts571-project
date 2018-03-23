@@ -42,6 +42,7 @@ struct SuffixTreeDriverConfiguration {
   std::string StatsOutput;
   std::string BWTOutput;
   std::string PostOrderOutput;
+  bool PrintLCS;
 };
 
 class SuffixTreeDriver {
@@ -80,12 +81,15 @@ class SuffixTreeDriver {
       ST.PostOrderPrint(PostOrderS);
     }
 
+    if (config_.PrintLCS)
+      std::cout << ST.LCS() << std::endl;;
+
     std::cout
         << "SuffixTree build in : "
         << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
         << " microseconds"
         << std::endl;
-}
+  }
 
   void PrintBWT(SuffixTree &ST, std::ostream &OS) {
     auto BTW = ST.BTW(sequence_);

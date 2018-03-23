@@ -21,6 +21,7 @@
 #define SUFFIX_TREE_H
 
 #include <cassert>
+#include <limits>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -113,9 +114,9 @@ class SuffixTree {
       , root_(nullptr)
       , last_inserted_ (nullptr)
       , nextNodeID_(2) {
-
-    nodePool_.push_back(SuffixTreeNode(1, -1, sequence_.begin(), sequence_.begin(), nullptr));
-    root_ = &nodePool_.front();
+    // Root is going to be an internal node
+    internalNodesPool_.push_back(SuffixTreeNode(1, -1, sequence_.begin(), sequence_.begin(), nullptr));
+    root_ = &internalNodesPool_.front();
     root_->Parent(root_);
     assert(root_ != nullptr);
     root_->SuffixLink(root_);
@@ -176,10 +177,18 @@ class SuffixTree {
   dfs_iterator begin() { return dfs_iterator(root_); }
   dfs_iterator end() { return dfs_iterator(); }
 
+  typename std::deque<SuffixTreeNode>::iterator
+  begin_leaves() { return leavesPool_.begin(); }
+
+  typename std::deque<SuffixTreeNode>::iterator
+  end_leaves() { return leavesPool_.end(); }
+
   std::string BTW(Sequence &S) {
     std::string result(S.length(), '\0');
 
     size_t i = 0;
+
+    // here order matters we can't Iterate over the leavesPool
     for (auto v : *this) {
       if (v->isLeaf()) {
         auto leaf = v->SuffixNumber();
@@ -188,6 +197,49 @@ class SuffixTree {
     }
 
     return result;
+  }
+
+  std::string LCS() {
+    // For all possible pairs of suffixes
+    node_ptr bestLCA = root_;
+    for (auto p1Itr = begin_leaves(), p1End = end_leaves() - 1;
+         p1Itr != p1End; ++p1Itr) {
+      for (auto p2Itr = p1Itr + 1, p2End = end_leaves();
+           p2Itr != p2End; ++p2Itr) {
+
+        node_ptr currentLCA = LCA(&*p1Itr, &*p2Itr, bestLCA->StringDepth());
+
+        if (currentLCA && currentLCA->StringDepth() > bestLCA->StringDepth()) {
+          bestLCA = currentLCA;
+        }
+      }
+    }
+
+    auto end = bestLCA->EndIncomingArcString();
+    // Climb up.
+    while(bestLCA->Parent() != root_) bestLCA = bestLCA->Parent();
+    return std::string(bestLCA->BeginIncomingArcString(), end);
+  }
+
+  node_ptr
+  LCA(node_ptr S1, node_ptr S2, size_t bound = 0) {
+    // We reached the top of the tree
+    if(S1->StringDepth() == 0 || S2->StringDepth() == 0) return root_;
+
+    // S1 is the LCA
+    if(S1 == S2->Parent()) return S1;
+
+    // S2 is the LCA
+    if(S2 == S1->Parent()) return S2;
+
+    // We know that there is a better solution.  Stop and report nullptr as don't care.
+    if (S1->StringDepth() < bound || S2->StringDepth() < bound) return nullptr;
+
+    // Go Up from the deepest side
+    if(S1->StringDepth() > S2->StringDepth())
+      return LCA(S1->Parent(), S2, bound);
+    else
+      return LCA(S1, S2->Parent(), bound);
   }
 
   void PostOrderPrint(std::ostream &OS) {
@@ -227,7 +279,9 @@ class SuffixTree {
   }
 
   Sequence sequence_;
-  std::deque<SuffixTreeNode> nodePool_;
+  std::deque<SuffixTreeNode> internalNodesPool_;
+  std::deque<SuffixTreeNode> leavesPool_;
+
   node_ptr root_;
   node_ptr last_inserted_;
   size_t nextNodeID_;
