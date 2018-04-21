@@ -114,13 +114,17 @@ void SuffixTree::PrintDot(std::ostream & OS) {
       OS << "\"" << r->ID() << "\" [ shape=rectangle, label=\""
          << "ID : " << r->ID() << "\n"
          << "Depth : " << r->StringDepth() << "\n"
-         << "SuffixID : " << r->SuffixNumber()
+         << "SuffixID : " << r->SuffixNumber() << "\n"
+         << "StartLeafIndex : " << r->StartLeafIndex() << "\n"
+         << "EndLeafIndex : " << r->EndLeafIndex()
          << "\" ];"
          << std::endl;
     } else {
       OS << "\"" << r->ID()
          << "\" [ label=\"ID : " << r->ID() << "\n"
-         << "Depth : " << r->StringDepth()
+         << "Depth : " << r->StringDepth() << "\n"
+         << "StartLeafIndex : " << r->StartLeafIndex() << "\n"
+         << "EndLeafIndex : " << r->EndLeafIndex()
          << "\" ];"
          << std::endl;
     }

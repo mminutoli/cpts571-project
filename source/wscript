@@ -23,3 +23,10 @@ def build(bld):
       includes = '.',
       export_includes = '.',
       use=[ 'project-headers', 'sequence_parser'])
+
+  bld(features = 'cxx cxxstlib',
+      source = [ 'ReadMappingDriver.cc' ],
+      target = 'read_mapping',
+      includes = '.',
+      export_includes = '.',
+      use=[ 'project-headers', 'sequence_parser', 'suffixtree'])

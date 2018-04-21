@@ -3,6 +3,11 @@
 
 def build(bld):
   bld(features = 'cxx cxxprogram',
+      source   = 'ReadMappingTool.cc',
+      target   = 'read_mapping_tool',
+      use = [ 'project-headers', 'read_mapping', 'BOOST' ])
+
+  bld(features = 'cxx cxxprogram',
       source   = 'SuffixTreeTool.cc',
       target   = 'suffixtree_tool',
       use = [ 'project-headers', 'suffixtree', 'BOOST' ])

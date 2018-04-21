@@ -50,6 +50,8 @@ class SuffixTreeNode {
       , arcStringStart_(SStart)
       , arcStringEnd_(SEnd)
       , stringDepth_(parent != nullptr ? parent->StringDepth() + std::distance(SStart, SEnd) : 0)
+      , startLeafIndex_(-1)
+      , endLeafIndex_(-1)
       , parent_(parent)
       , suffixLink_(nullptr)
       , children_()
@@ -60,6 +62,12 @@ class SuffixTreeNode {
 
   ssize_t SuffixNumber() const { return suffixNumber_; }
   void SuffixNumber(ssize_t SFN) { suffixNumber_ = SFN; }
+
+  ssize_t StartLeafIndex() const { return startLeafIndex_; }
+  void StartLeafIndex(ssize_t SLI) { startLeafIndex_ = SLI; }
+
+  ssize_t EndLeafIndex() const { return endLeafIndex_; }
+  void EndLeafIndex(ssize_t SLI) { endLeafIndex_ = SLI; }
 
   size_t StringDepth() const { return stringDepth_; }
   void StringDepth(size_t D) { stringDepth_ = D; }
@@ -72,6 +80,9 @@ class SuffixTreeNode {
 
   typename children_map::iterator begin() { return children_.begin(); }
   typename children_map::iterator end() { return children_.end(); }
+
+  typename children_map::reverse_iterator rbegin() { return children_.rbegin(); }
+  typename children_map::reverse_iterator rend() { return children_.rend(); }
 
   typename children_map::mapped_type &
   operator[](const typename children_map::key_type &i) { return children_[i]; }
@@ -99,6 +110,9 @@ class SuffixTreeNode {
 
   size_t stringDepth_;
 
+  ssize_t startLeafIndex_;
+  ssize_t endLeafIndex_;
+
   parent_ptr parent_;
   suffix_link_ptr suffixLink_;
   children_map children_;
@@ -116,7 +130,8 @@ class SuffixTree {
       : sequence_(s)
       , root_(nullptr)
       , last_inserted_ (nullptr)
-      , nextNodeID_(2) {
+      , nextNodeID_(2)
+      , A_(s.length(), -1) {
     // Root is going to be an internal node
     internalNodesPool_.push_back(SuffixTreeNode(1, -1, sequence_.begin(), sequence_.begin(), nullptr));
     root_ = &internalNodesPool_.front();
@@ -124,6 +139,7 @@ class SuffixTree {
     assert(root_ != nullptr);
     root_->SuffixLink(root_);
     buildSuffixTree(s.begin(), s.end());
+    prepareSuffixTree();
   }
 
   class dfs_iterator {
@@ -321,9 +337,38 @@ class SuffixTree {
     }
   }
 
+  void prepareSuffixTree(size_t x = 0) {
+    size_t nextIndex = 0;
+    prepareSuffixTree(root_, x, nextIndex);
+  }
+
+  void prepareSuffixTree(node_ptr v, size_t x, size_t & nextIndex) {
+    if (v == nullptr) return;
+
+    if (v->isLeaf()) {
+      A_[nextIndex] = v->SuffixNumber();
+      if (v->StringDepth() >= x) {
+        v->StartLeafIndex(nextIndex);
+        v->EndLeafIndex(nextIndex);
+      }
+      ++nextIndex;
+      return;
+    }
+
+    for (auto child : *v) {
+      prepareSuffixTree(child.second, x, nextIndex);
+    }
+
+    if (v->StringDepth() >= x) {
+      v->StartLeafIndex(v->begin()->second->StartLeafIndex());
+      v->EndLeafIndex(v->rbegin()->second->EndLeafIndex());
+    }
+  }
+
   Sequence sequence_;
   std::deque<SuffixTreeNode> internalNodesPool_;
   std::deque<SuffixTreeNode> leavesPool_;
+  std::vector<ssize_t> A_;
 
   node_ptr root_;
   node_ptr last_inserted_;
