@@ -21,6 +21,7 @@
 #define SUFFIX_TREE_H
 
 #include <cassert>
+#include <chrono>
 #include <limits>
 #include <fstream>
 #include <string>
@@ -126,20 +127,36 @@ class SuffixTree {
   using stack_element =
       std::pair<node_ptr, typename std::map<char, node_ptr>::const_iterator>;
 
-  SuffixTree(const Sequence &s)
+  SuffixTree(const Sequence &s, size_t x = 0)
       : sequence_(s)
       , root_(nullptr)
       , last_inserted_ (nullptr)
       , nextNodeID_(2)
-      , A_(s.length(), -1) {
+      , A_(s.length(), -1)
+      , x_(x) {
     // Root is going to be an internal node
     internalNodesPool_.push_back(SuffixTreeNode(1, -1, sequence_.begin(), sequence_.begin(), nullptr));
     root_ = &internalNodesPool_.front();
     root_->Parent(root_);
     assert(root_ != nullptr);
     root_->SuffixLink(root_);
+    
+    auto beginBuild = std::chrono::steady_clock::now();
     buildSuffixTree(s.begin(), s.end());
+    auto endBuild = std::chrono::steady_clock::now();
+
+    double buildTime = std::chrono::duration_cast<
+      std::chrono::duration<double> >(endBuild - beginBuild).count();
+    std::cout << "# SuffixTree created in " << buildTime
+              << std::endl;
+
+    auto beginPrepare = std::chrono::steady_clock::now();
     prepareSuffixTree();
+    auto endPrepare = std::chrono::steady_clock::now();
+
+    double prepareTime = std::chrono::duration_cast<
+      std::chrono::duration<double> >(endPrepare - beginPrepare).count();
+    std::cout << "# SuffixTree prepared in " << prepareTime << std::endl;
   }
 
   class dfs_iterator {
@@ -320,7 +337,11 @@ class SuffixTree {
        << std::endl;
   }
 
+  std::vector<size_t> FindLoc(const Sequence & read) const;
+
  private:
+  std::tuple<node_ptr, Sequence::const_iterator>
+  FindLoc(node_ptr r, Sequence::const_iterator i, Sequence::const_iterator E) const;
   node_ptr SplitNode(node_ptr r, ptrdiff_t distance);
 
   void PrintDot(std::ostream &OS, node_ptr r);
@@ -337,17 +358,17 @@ class SuffixTree {
     }
   }
 
-  void prepareSuffixTree(size_t x = 0) {
+  void prepareSuffixTree() {
     size_t nextIndex = 0;
-    prepareSuffixTree(root_, x, nextIndex);
+    prepareSuffixTree(root_, nextIndex);
   }
 
-  void prepareSuffixTree(node_ptr v, size_t x, size_t & nextIndex) {
+  void prepareSuffixTree(node_ptr v, size_t & nextIndex) {
     if (v == nullptr) return;
 
     if (v->isLeaf()) {
       A_[nextIndex] = v->SuffixNumber();
-      if (v->StringDepth() >= x) {
+      if (v->StringDepth() >= x_) {
         v->StartLeafIndex(nextIndex);
         v->EndLeafIndex(nextIndex);
       }
@@ -356,10 +377,10 @@ class SuffixTree {
     }
 
     for (auto child : *v) {
-      prepareSuffixTree(child.second, x, nextIndex);
+      prepareSuffixTree(child.second, nextIndex);
     }
 
-    if (v->StringDepth() >= x) {
+    if (v->StringDepth() >= x_) {
       v->StartLeafIndex(v->begin()->second->StartLeafIndex());
       v->EndLeafIndex(v->rbegin()->second->EndLeafIndex());
     }
@@ -369,6 +390,7 @@ class SuffixTree {
   std::deque<SuffixTreeNode> internalNodesPool_;
   std::deque<SuffixTreeNode> leavesPool_;
   std::vector<ssize_t> A_;
+  size_t x_;
 
   node_ptr root_;
   node_ptr last_inserted_;

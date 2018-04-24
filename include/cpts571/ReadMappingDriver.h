@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "cpts571/Alignment.h"
 #include "cpts571/Sequence.h"
 #include "cpts571/SuffixTree.h"
 
@@ -30,6 +31,10 @@ namespace cpts571 {
 struct ReadMappingDriverConfiguration {
   std::string GeneFileName;
   std::string ReadsFileName;
+  std::string CFileName;
+  size_t x;
+  double X;
+  double Y;
 };
 
 class ReadMappingDriver {
@@ -39,22 +44,15 @@ class ReadMappingDriver {
       , reads_()
       , config_(C)
   {
-    Parse(config_.GeneFileName, config_.ReadsFileName);
+    Parse(config_.GeneFileName, config_.ReadsFileName, config_.CFileName);
   }
 
-  void Parse(const std::string &GF, const std::string &RF);
+  void Parse(const std::string &GF, const std::string &RF, const std::string &CF);
 
-  void Exec() {
-    std::cout << "# Gene length : " << gene_.length() << std::endl;
-    std::cout << "# Read number : " << reads_.size() << std::endl;
-
-    std::string terminal("$");
-    gene_.AppendChunk(terminal.begin(), terminal.end());
-    SuffixTree ST(gene_);
-    std::cout << "# SuffixTree created" << std::endl;
-  }
+  void Exec();
 
  private:
+  ScoreTable scoreTable_{ +1, -2, -5, -1 };
   Sequence gene_;
   std::vector<Sequence> reads_;
   ReadMappingDriverConfiguration config_;

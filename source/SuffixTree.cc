@@ -19,6 +19,7 @@
 #include <iostream>
 #include <ostream>
 #include <cassert>
+#include <tuple>
 
 #include "cpts571/SuffixTree.h"
 
@@ -64,6 +65,51 @@ SuffixTree::insertSuffix(Sequence::const_iterator B, Sequence::const_iterator E,
       FindPath(V, V->operator[](*B), B, E, i);
     }
   }
+}
+
+std::vector<size_t>
+SuffixTree::FindLoc(const Sequence & read) const {
+  auto itr = read.begin();
+  auto end = read.end();
+
+  node_ptr node = root_;
+  node_ptr deepestNode = root_;
+
+  assert(itr != end);
+
+  while (itr != end) {
+    std::tie(node, itr) = FindLoc(node, itr, end);
+
+    if (node->StringDepth() >= x_ &&
+        deepestNode->StringDepth() < node->StringDepth()) {
+      deepestNode = node;
+    }
+    node = node->SuffixLink();
+  }
+
+  return std::vector<size_t>(
+      &A_[deepestNode->StartLeafIndex()], &A_[deepestNode->EndLeafIndex()]);
+}
+
+std::tuple<SuffixTree::node_ptr, Sequence::const_iterator>
+SuffixTree::FindLoc(
+    SuffixTree::node_ptr r,
+    Sequence::const_iterator itr, Sequence::const_iterator end) const {
+
+  auto sItr = r->BeginIncomingArcString(), sEnd = r->EndIncomingArcString();
+  for (;sItr != sEnd && itr != end && *sItr == *itr; ++sItr, ++itr);
+
+  if (sItr == sEnd) {
+    if (itr != end) {
+      auto nextRoot = r->operator[](*itr);
+      if (nextRoot != nullptr)
+        return FindLoc(nextRoot, itr, end);
+    }
+    return std::make_tuple(r, itr);
+  }
+
+  itr -= std::distance(r->BeginIncomingArcString(), sItr);
+  return std::make_tuple(r->Parent(), itr);
 }
 
 void
