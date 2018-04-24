@@ -1,0 +1,4 @@
+start : 1
+end : 4
+string : ISSI
+SuffixTree build in : 8 microseconds

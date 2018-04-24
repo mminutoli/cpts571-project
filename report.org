@@ -8,126 +8,33 @@
 
 The experiments were run on a Intel Xeon E5645 @ 2.40GHz (12MB cache size)
 equipped with 24GB of RAM.  The system is running Fedora 27.  The program was
-compiled with GCC 7.2.1 with the "-Ofast" and "-march=native" compiler flag.
+compiled with GCC 7.3.1 with the "-Ofast" and "-march=native" compiler flag.
 
 Execution times were collected with the performance governor enabled (CPU at
-maximum speed).  The execution time, reported in the table in microseconds, are
-the result of a single run of the program without any performance
-instrumentation.  The memory usage results were collected in a successive run
-with Valgrind's /massif/ tool.
+maximum speed).  The execution time, reported in the table in seconds, are the
+result of a single run of the program.  The memory usage results were collected
+in a successive run with Valgrind's /massif/ tool.
 
 * Data
 
 #+NAME: data
-|------------------+--------+------------+------------+---------|
-| *Input*          | *Time* | *Mem Used* | *Mem Est.* |    *BP* |
-|------------------+--------+------------+------------+---------|
-| s1               |      5 |     112056 |        951 |       6 |
-| s2               |      8 |     112056 |       1644 |      10 |
-| Opsin human      |   1398 |     988744 |     469623 |    3302 |
-| Opsin mouse      |   1625 |    1148368 |     548580 |    3843 |
-| Human BRCA2 gene |   5256 |    3235568 |    1622823 |   11382 |
-| Sylco            |  97944 |   42926488 |   22093830 |  155461 |
-| Yeast's Chr12    | 914812 |  300914288 |  154486176 | 1078175 |
+#+CAPTION: Break down of the execution time
+#+LABEL: tab:performance
+|------------------------+-----------------+-----------------|
+| *Phase*                | *Time (x = 25)* | *Time (x = 20)* |
+|------------------------+-----------------+-----------------|
+| SuffixTree Creation    |         5.30397 |         5.30827 |
+| SuffixTree Preparation |         1.46306 |         1.46668 |
+| MapReads               |         41.1957 |         61.4111 |
+| Output                 |        0.920322 |        0.895578 |
+| Total                  |         51.4413 |         71.6376 |
 
-* Plots
+Table [[tab:performance]] show a break down of the execution time for the /Peach/
+data set.  With the configuration given in the assignment, only 32797 of the
+500000 reads have hits with more than 25 consecutive characters.  Reducing
+$x=20$, the number of reads that have hits increases to 49158 while the
+execution time increases to 61.4 seconds.  The increment is reasonable because
+on average each of those reads requires 3 local alignment procedures.
 
-Figure [[fig:performance]] and Figure [[fig:memoryusage]] show how the execution time
-and the memory usage grow while increasing the input size.  In both plots, the
-observed trend is that execution time and the memory footprint grow linearly
-with the size of the input as expected since the implementation uses McCreight's
-method and the size of the nodes in the three is $O(1)$ (roughly 40Bytes).
-
-Figure [[fig:memoryusage]] shows that for the inputs /s1/ and /s2/ (first two points
-in the plot) the sampled maximum heap size by Valgrind is 112056 Bytes.  This
-behavior can be intuitively explained by the limited size of the input and the
-way memory allocators (malloc/new) request memory blocks to the operating
-system.  In fact, to minimize the performance penalty of system calls, they
-usually ask for large blocks and due to the limited size of the input we never
-exceeded the already available heap.
-
-#+NAME: fig:performance
-#+BEGIN_SRC python :results file :exports results :var data=data
-import numpy as np
-import matplotlib.pyplot as plt
-
-data = data[1:]
-
-labels = [a[0] for a in data]
-times  = [a[1] for a in data]
-BPs    = [a[4] for a in data]
-
-a, = plt.loglog(BPs, times, label='execution time',  marker='x')
-
-x = 10.0**np.linspace(0.0, 6.0, 20)
-y = x
-b, = plt.loglog(x, y, label='ideal (linear) trend')
-
-plt.grid(True)
-plt.xlabel("Number of BP of the Input")
-plt.ylabel("Execution time (microseconds)")
-
-plt.legend(handles=[a,b],loc="upper left")
-
-filename = "execution-time.png"
-plt.savefig(filename)
-
-return filename
-#+END_SRC
-#+CAPTION: Execution time of SuffixTree construction.
-#+LABEL: fig:performance
-#+ATTR_LATEX: :width 0.6\textwidth
-#+RESULTS: fig:performance
-[[file:execution-time.png]]
-
-#+NAME: fig:memoryusage
-#+BEGIN_SRC python :results file :exports results :var data=data
-import numpy as np
-import matplotlib.pyplot as plt
-
-data = data[1:]
-
-labels = [a[0] for a in data]
-estimated  = [a[3] for a in data]
-sampled  = [a[2] for a in data]
-BPs    = [a[4] for a in data]
-
-a, = plt.loglog(BPs, estimated, label='Estimated SuffixTree size',  marker='x')
-b, = plt.loglog(BPs, sampled, label='Sampled Max Heap Size with Valgrind',  marker='o')
-
-x = 10.0**np.linspace(0.0, 6.0, 20)
-y = x
-c, = plt.loglog(x, y, label='ideal linear trend')
-
-plt.grid(True)
-plt.xlabel("Number of BP of the Input")
-plt.ylabel("Memory usage (Bytes)")
-
-plt.legend(handles=[a,b,c],loc="upper left")
-
-filename = "memory-usage.png"
-plt.savefig(filename)
-
-return filename
-#+END_SRC
-#+CAPTION: Memory usage (heap) estimated and sampled with Valgrind.
-#+LABEL: fig:memoryusage
-#+ATTR_LATEX: :width 0.6\textwidth
-#+RESULTS: fig:memoryusage
-
-* Exact Matching Repeat
-
-#+NAME: match
-|------------------+---------+-------+----------|
-| *Input*          | *Start* | *End* | *Length* |
-|------------------+---------+-------+----------|
-| s1               |       1 |     4 |        3 |
-| s2               |       1 |     5 |        4 |
-| Opsin human      |    1810 |  1828 |       18 |
-| Opsin mouse      |    2838 |  2852 |       14 |
-| Human BRCA2 gene |    3389 |  3403 |       14 |
-| Sylco            |   88130 | 88178 |       48 |
-| Yeast's Chr12    |       - |     - |        - |
-#+TBLFM: @2$4=$3 - $2::@3$4=$3 - $2::@4$4=$3 - $2::@5$4=$3 - $2::@6$4=$3 - $2::@7$4=$3 - $2
-
-The last experiment didn't terminate.
+From the measurement using Valgrind massif, the peak memory consumption of the
+program is $2,036,277,008$Bytes.

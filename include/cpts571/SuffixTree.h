@@ -243,28 +243,17 @@ class SuffixTree {
 
   std::tuple<size_t, size_t, std::string> LCS() const {
     // For all possible pairs of suffixes
-    const_node_ptr bestLCA = root_;
-    const_node_ptr bestI   = root_;
-    for (auto p1Itr = begin_leaves(), p1End = end_leaves() - 1;
-         p1Itr != p1End; ++p1Itr) {
-      for (auto p2Itr = p1Itr + 1, p2End = end_leaves();
-           p2Itr != p2End; ++p2Itr) {
+    auto max = internalNodesPool_.begin();
+    for (auto itr = max + 1, end = internalNodesPool_.end(); itr != end; ++itr) {
+      if (itr->StringDepth() > max->StringDepth())
+        max = itr;
+    } 
 
-        const_node_ptr currentLCA = LCA(&*p1Itr, &*p2Itr, bestLCA->StringDepth());
-
-        if (currentLCA && currentLCA->StringDepth() > bestLCA->StringDepth()) {
-          bestLCA = currentLCA;
-          bestI = &*p1Itr;
-        }
-      }
-    }
-
-    size_t startP = bestI->SuffixNumber();
-    size_t length = bestLCA->StringDepth();
-    auto end = bestLCA->BeginIncomingArcString() + length;
     // Climb up.
-    std::string s(sequence_.begin() + startP, sequence_.begin() + startP + length);
-    return std::make_tuple(startP, startP + length, s);
+    size_t startP = max->SuffixNumber();
+    size_t endP = startP + max->StringDepth();
+    std::string s(sequence_.begin() + startP, sequence_.begin() + endP);
+    return std::make_tuple(startP, endP, s);
   }
 
   const_node_ptr
@@ -319,10 +308,13 @@ class SuffixTree {
     size_t numberOfLeaves = leavesPool_.size();
     size_t totDepth = 0;
     size_t maxDepth = 0;
-    for (auto v : *this) {
-      maxDepth = std::max(maxDepth, v->StringDepth());
-      totDepth += v->StringDepth();
+
+    for (auto & n : internalNodesPool_) {
+      totDepth += n.StringDepth();
+      maxDepth = std::max(maxDepth, n.StringDepth());
     }
+
+    for (auto & n : leavesPool_) totDepth += n.StringDepth();
 
     size_t internalNodes = internalNodesPool_.size();
     OS << "# Total number of nodes : " << numberOfNodes << "\n"

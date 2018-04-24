@@ -63,12 +63,18 @@ void ReadMappingDriver::Exec()  {
   std::vector<ssize_t> result;
   result.reserve(reads_.size());
 
+  double readsWithMatches = 0;
+  double totNumberOfMatches = 0;
   auto beginMapReads = std::chrono::steady_clock::now();
   for (auto & r : reads_) {
     auto locations = ST.FindLoc(r);
 
     double bestLengthCoverage = 0;
     ssize_t bestStart = -1;
+    if (locations.size() > 0) {
+      ++readsWithMatches;
+      totNumberOfMatches += locations.size();
+    }
     for (auto l : locations) {
       ssize_t startPos = std::max<ssize_t>(0, l - r.length());
       ssize_t endPos = std::min<ssize_t>(gene_.length(), l + r.length());
@@ -119,6 +125,7 @@ void ReadMappingDriver::Exec()  {
     std::chrono::duration<double> >(endMapReads - beginMapReads).count();
 
   std::cout << "# MapReads completed in " << MapReadsTime
+            << "\n# Average number of alignment per read (w/ hits) : " << totNumberOfMatches/readsWithMatches
             << std::endl;
 
   
