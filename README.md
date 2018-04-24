@@ -58,3 +58,31 @@ The previous command should print the help message of the tool.  Examples of usa
   ```
 
 The directory output-files contains dumps of the outputs requested.  The experiment folder contains the scripts used to generate them.
+
+## Usage of the Read Mapping Tool
+
+To execute the read mapping tool from the root of this repository:
+
+```shell
+./build/tools/read_mapping_tool
+```
+
+The previous command should print the help message of the tool.  Examples of usage are:
+- Build and Print the SuffixTree as Dot file:
+  ```shell
+  ./build/tools/read_mapping_tool -g tests/Peach_reference.fasta -r tests/Peach_simulated_reads.fasta
+  ```
+- To change the value of x, X, Y
+  ```shell
+  ./build/tools/read_mapping_tool -g tests/Peach_reference.fasta -r tests/Peach_simulated_reads.fasta -x <value> -X <value> -Y <value>
+  ```
+  
+- To give a different score table to the local alignment procedure:
+  ```shell
+  ./build/tools/read_mapping_tool -g tests/Peach_reference.fasta -r tests/Peach_simulated_reads.fasta -c tests/config.json
+  ```
+
+The directory output-files contains:
+- MappingResults_Peach_x20.txt is the output of a run with x=20
+- MappingResults_Peach_x25.txt is the output of a run with x=25
+

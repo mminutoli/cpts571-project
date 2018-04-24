@@ -37,4 +37,4 @@ execution time increases to 61.4 seconds.  The increment is reasonable because
 on average each of those reads requires 3 local alignment procedures.
 
 From the measurement using Valgrind massif, the peak memory consumption of the
-program is $2,036,277,008$Bytes.
+program is 2,036,277,008Bytes.
